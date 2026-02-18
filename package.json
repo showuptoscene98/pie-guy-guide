@@ -1,6 +1,6 @@
 {
   "name": "pie-guy-guide",
-  "version": "3.1.10",
+  "version": "3.1.11",
   "description": "Pie Guy - Project Gorgon Guide",
   "main": "main.js",
   "author": "Mewoicles",
@@ -27,15 +27,11 @@
     "appId": "com.pieguy.guide",
     "productName": "Pie Guy Guide",
     "copyright": "Copyright © 2026",
-
     "artifactName": "${productName}-Setup-${version}.${ext}",
-
     "icon": "assets/icon.png",
-
     "directories": {
       "output": "dist"
     },
-
     "files": [
       "**/*",
       "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
@@ -48,12 +44,16 @@
       "!dist/**",
       "!.git/**"
     ],
-
     "extraResources": [
-      { "from": "assets", "to": "assets" },
-      { "from": "maps", "to": "maps" }
+      {
+        "from": "assets",
+        "to": "assets"
+      },
+      {
+        "from": "maps",
+        "to": "maps"
+      }
     ],
-
     "publish": [
       {
         "provider": "github",
@@ -61,11 +61,11 @@
         "repo": "pie-guy-guide"
       }
     ],
-
     "win": {
-      "target": ["nsis"]
+      "target": [
+        "nsis"
+      ]
     },
-
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
@@ -75,13 +75,15 @@
       "installerHeader": "assets/installer/header.bmp",
       "include": "build/installer.nsh"
     },
-
     "mac": {
-      "target": ["dmg"]
+      "target": [
+        "dmg"
+      ]
     },
-
     "linux": {
-      "target": ["AppImage"],
+      "target": [
+        "AppImage"
+      ],
       "category": "Utility"
     }
   }
