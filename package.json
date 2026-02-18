@@ -32,7 +32,18 @@
           "owner": "showuptoscene98",
           "repo": "pie-guy-guide"
         }
-      ]
+      ],
+"artifactName": "${productName}-Setup-${version}.${ext}",
+"nsis": {
+  "oneClick": false,
+  "allowToChangeInstallationDirectory": true,
+  "createDesktopShortcut": true,
+  "createStartMenuShortcut": true,
+  "installerSidebar": "assets/installer/sidebar.bmp",
+  "installerHeader": "assets/installer/header.bmp",
+  "include": "build/installer.nsh"
+}
+
     },
     "files": [
       "**/*",
