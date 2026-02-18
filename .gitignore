@@ -9,7 +9,6 @@ pnpm-debug.log*
 dist/
 out/
 release/
-build/
 *.asar
 
 # OS files
