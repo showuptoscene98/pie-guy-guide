@@ -1,6 +1,6 @@
 {
   "name": "pie-guy-guide",
-  "version": "3.1.8",
+  "version": "3.1.9",
   "description": "Pie Guy - Project Gorgon Guide",
   "main": "main.js",
   "author": "Mewoicles",
@@ -33,17 +33,16 @@
           "repo": "pie-guy-guide"
         }
       ],
-"artifactName": "${productName}-Setup-${version}.${ext}",
-"nsis": {
-  "oneClick": false,
-  "allowToChangeInstallationDirectory": true,
-  "createDesktopShortcut": true,
-  "createStartMenuShortcut": true,
-  "installerSidebar": "assets/installer/sidebar.bmp",
-  "installerHeader": "assets/installer/header.bmp",
-  "include": "build/installer.nsh"
-}
-
+      "artifactName": "${productName}-Setup-${version}.${ext}",
+      "nsis": {
+        "oneClick": false,
+        "allowToChangeInstallationDirectory": true,
+        "createDesktopShortcut": true,
+        "createStartMenuShortcut": true,
+        "installerSidebar": "assets/installer/sidebar.bmp",
+        "installerHeader": "assets/installer/header.bmp",
+        "include": "build/installer.nsh"
+      }
     },
     "files": [
       "**/*",
