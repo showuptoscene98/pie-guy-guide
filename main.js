@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain, globalShortcut } = require("electron");
 const path = require("path");
+const { autoUpdater } = require("electron-updater");
 
 let mainWindow = null;
 let mapWindow = null;
@@ -53,6 +54,14 @@ function restoreMainIfMinimized() {
 
 app.whenReady().then(() => {
   createMainWindow();
+  // Auto-update from GitHub Releases
+autoUpdater.checkForUpdatesAndNotify();
+
+// Optional: check again every 6 hours
+setInterval(() => {
+  autoUpdater.checkForUpdatesAndNotify();
+}, 6 * 60 * 60 * 1000);
+
 
   // Hotkey: F7 minimize/restore
   globalShortcut.register("F7", () => {
