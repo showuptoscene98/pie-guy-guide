@@ -1,6 +1,6 @@
 {
   "name": "pie-guy-guide",
-  "version": "3.1.7",
+  "version": "3.1.8",
   "description": "Pie Guy - Project Gorgon Guide",
   "main": "main.js",
   "author": "Mewoicles",
@@ -27,12 +27,12 @@
     "directories": {
       "output": "dist",
       "publish": [
-  {
-    "provider": "github",
-    "owner": "showuptoscene98",
-    "repo": "pie-guy-guide"
-  }
-]
+        {
+          "provider": "github",
+          "owner": "showuptoscene98",
+          "repo": "pie-guy-guide"
+        }
+      ]
     },
     "files": [
       "**/*",
