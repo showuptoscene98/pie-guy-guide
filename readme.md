@@ -1,5 +1,9 @@
 # Pie Guy Guide (Project Gorgon Companion)
 
+Download 3.1.15.exe to install JUST the guide
+
+
+
 Electron + Node.js desktop guide/overlay app.
 
 ## Run locally
