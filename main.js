@@ -1,66 +1,9 @@
-const { autoUpdater } = require("electron-updater");
 const { app, BrowserWindow, ipcMain, globalShortcut } = require("electron");
 const path = require("path");
 
 let mainWindow = null;
 let mapWindow = null;
 let dungeonWindow = null;
-
-function createMainWindow() {
-  const splash = new BrowserWindow({
-    width: 420,
-    height: 160,
-    frame: false,
-    transparent: false,
-    backgroundColor: "#0a0a0a",
-    alwaysOnTop: true,
-    resizable: false,
-    movable: true,
-    show: true,
-    webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
-      contextIsolation: true,
-      nodeIntegration: false
-    }
-  });
-
-  splash.loadFile("splash.html");
-
-  mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 800,
-    minWidth: 1100,
-    minHeight: 700,
-    frame: false,
-    show: false, // IMPORTANT: wait until ready
-    backgroundColor: "#0f1115",
-    webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
-      contextIsolation: true,
-      nodeIntegration: false
-    }
-  });
-
-  mainWindow.loadFile("index.html");
-
-  mainWindow.once("ready-to-show", () => {
-    splash.close();
-    mainWindow.show();
-    mainWindow.focus();
-  });
-
-  globalShortcut.register("F7", () => {
-    if (!mainWindow) return;
-    if (mainWindow.isMinimized()) mainWindow.restore();
-    else mainWindow.minimize();
-  });
-}
-
-  globalShortcut.register("F7", () => {
-    if (!mainWindow) return;
-    if (mainWindow.isMinimized()) mainWindow.restore();
-    else mainWindow.minimize();
-  });
 
 function createOverlayWindow(file) {
   const win = new BrowserWindow({
@@ -69,8 +12,9 @@ function createOverlayWindow(file) {
     minWidth: 900,
     minHeight: 620,
     frame: false,
-    backgroundColor: "#0f1115",
+    backgroundColor: "#111111",
     alwaysOnTop: true,
+    center: true,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
@@ -82,32 +26,90 @@ function createOverlayWindow(file) {
   return win;
 }
 
-app.whenReady().then(createMainWindow);
-autoUpdater.checkForUpdatesAndNotify();
-autoUpdater.on("update-available", () => console.log("Update available"));
-autoUpdater.on("update-downloaded", () => console.log("Update downloaded"));
-autoUpdater.on("error", (e) => console.log("Updater error:", e));
+function createMainWindow() {
+  mainWindow = new BrowserWindow({
+    width: 1280,
+    height: 800,
+    minWidth: 1100,
+    minHeight: 700,
+    frame: false,
+    backgroundColor: "#1a1a1a",
+    webPreferences: {
+      preload: path.join(__dirname, "preload.js"),
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  });
 
-ipcMain.on("main:minimize", () => mainWindow?.minimize());
-ipcMain.on("main:close", () => mainWindow?.close());
+  mainWindow.loadFile("index.html");
+}
 
-ipcMain.on("overlay:openMap", () => {
-  if (mapWindow) return mapWindow.show(), mapWindow.focus();
-  mapWindow = createOverlayWindow("map.html");
-  mapWindow.on("closed", () => (mapWindow = null));
-});
+function restoreMainIfMinimized() {
+  if (mainWindow && mainWindow.isMinimized()) {
+    mainWindow.restore();
+    mainWindow.focus();
+  }
+}
 
-ipcMain.on("overlay:openDungeon", () => {
-  if (dungeonWindow) return dungeonWindow.show(), dungeonWindow.focus();
-  dungeonWindow = createOverlayWindow("dungeon.html");
-  dungeonWindow.on("closed", () => (dungeonWindow = null));
-});
+app.whenReady().then(() => {
+  createMainWindow();
 
-ipcMain.on("overlay:close", (event) => {
-  const win = BrowserWindow.fromWebContents(event.sender);
-  win?.close();
+  // Hotkey: F7 minimize/restore
+  globalShortcut.register("F7", () => {
+    if (!mainWindow) return;
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    else mainWindow.minimize();
+  });
 });
 
 app.on("will-quit", () => {
   globalShortcut.unregisterAll();
+});
+
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") app.quit();
+});
+
+// Main controls
+ipcMain.on("main:minimize", () => mainWindow?.minimize());
+ipcMain.on("main:close", () => mainWindow?.close());
+
+// Map overlay: minimize main until map closes
+ipcMain.on("overlay:openMap", () => {
+  if (mapWindow) {
+    mapWindow.show();
+    mapWindow.focus();
+    return;
+  }
+
+  if (mainWindow && !mainWindow.isMinimized()) mainWindow.minimize();
+
+  mapWindow = createOverlayWindow("map.html");
+  mapWindow.on("closed", () => {
+    mapWindow = null;
+    restoreMainIfMinimized();
+  });
+});
+
+// Dungeon overlay: same behavior
+ipcMain.on("overlay:openDungeon", () => {
+  if (dungeonWindow) {
+    dungeonWindow.show();
+    dungeonWindow.focus();
+    return;
+  }
+
+  if (mainWindow && !mainWindow.isMinimized()) mainWindow.minimize();
+
+  dungeonWindow = createOverlayWindow("dungeon.html");
+  dungeonWindow.on("closed", () => {
+    dungeonWindow = null;
+    restoreMainIfMinimized();
+  });
+});
+
+// Close overlay (ESC)
+ipcMain.on("overlay:close", (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  win?.close();
 });

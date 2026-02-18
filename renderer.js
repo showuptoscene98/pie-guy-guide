@@ -1,4 +1,4 @@
-// Stop right-click menu and stop dragging images out (logo + icons)
+// Block right click and dragging images out of the app
 window.addEventListener("contextmenu", (e) => e.preventDefault());
 window.addEventListener("dragstart", (e) => e.preventDefault());
 
@@ -28,3 +28,25 @@ function go(name) {
 
   setActiveNav(navMap[name]);
 }
+
+// Default page on launch:
+go("about");
+// Leveling accordion: only one bracket open at a time
+function setupLevelingAccordion() {
+  const container = document.querySelector("#page-leveling .leveling");
+  if (!container) return;
+
+  const all = Array.from(container.querySelectorAll("details.lvl"));
+
+  all.forEach((d) => {
+    d.addEventListener("toggle", () => {
+      if (!d.open) return;
+      all.forEach((other) => {
+        if (other !== d) other.open = false;
+      });
+    });
+  });
+}
+
+// run after DOM loads
+window.addEventListener("DOMContentLoaded", setupLevelingAccordion);

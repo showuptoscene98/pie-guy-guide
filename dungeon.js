@@ -22,9 +22,9 @@ function resetView() {
   updateTransform();
 }
 
-// placeholder uses maps folder so it always loads
+// uses dungeons folder 
 function loadDungeon(file) {
-  img.src = `maps/${file}`;
+  img.src = `dungeons/${file}`;
   resetView();
 }
 
@@ -67,4 +67,4 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") window.api.closeOverlay();
 });
 
-loadDungeon("Ilmari.jpg");
+loadDungeon("Rahu Sewer.jpg");

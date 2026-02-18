@@ -9,33 +9,69 @@ permissions:
   contents: write
 
 jobs:
-  release:
-    strategy:
-      matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
-    runs-on: ${{ matrix.os }}
-
+  build-windows:
+    runs-on: windows-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
-      # IMPORTANT: electron-builder uses GH_TOKEN to publish release assets properly for auto-updates
-      - name: Build & Publish (electron-builder)
-        run: npx electron-builder --publish always
+      - run: npm ci
+      - run: npx electron-builder --win --publish never
+      - name: Upload Windows artifacts to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            dist/**/*.exe
+            dist/**/*.msi
+            dist/**/*.zip
+            dist/**/*.yml
+            dist/**/*.blockmap
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Helpful for debugging: show what was created
-      - name: List dist outputs
-        run: |
-          echo "=== dist outputs ==="
-          ls -R dist || true
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - run: npx electron-builder --mac --publish never
+      - name: Upload macOS artifacts to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/**/*.dmg
+            dist/**/*.zip
+            dist/**/*.yml
+            dist/**/*.blockmap
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - run: npx electron-builder --linux --publish never
+      - name: Upload Linux artifacts to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/**/*.AppImage
+            dist/**/*.deb
+            dist/**/*.rpm
+            dist/**/*.tar.gz
+            dist/**/*.yml
+            dist/**/*.blockmap
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

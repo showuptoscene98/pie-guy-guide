@@ -8,11 +8,13 @@
 <body>
   <div class="app">
 
+    <!-- Topbar (drag region) -->
     <div class="topbar">
-      <div>
+      <div class="topbar-left">
         <div class="topbar-title">Pie Guy Guide</div>
-        <div class="topbar-sub">Use the sidebar to navigate pages</div>
+        <div class="topbar-sub">Project Gorgon Companion</div>
       </div>
+
       <div class="topbar-controls">
         <button class="topbtn" onclick="window.api.mainMinimize()">—</button>
         <button class="topbtn danger" onclick="window.api.mainClose()">✕</button>
@@ -20,20 +22,18 @@
     </div>
 
     <div class="layout">
-
-      <!-- SLIDE SIDEBAR -->
-      <aside class="sidebar">
+      <!-- Hover-slide sidebar -->
+      <aside class="sidebar" aria-label="Sidebar Navigation">
         <div class="side-head">
           <img src="assets/logo.png" class="logo" alt="Pie Guy" draggable="false" />
           <div class="brand">
             <div class="brand-name">Pie Guy</div>
-            <div class="brand-sub">Project Gorgon Companion</div>
+            <div class="brand-sub">Guide & Overlays</div>
           </div>
         </div>
 
         <nav class="nav">
-
-          <button class="navBtn active" id="navHome" onclick="go('home')">
+          <button class="navBtn" id="navHome" onclick="go('home')">
             <img class="icon" src="assets/icons/home.png" alt="" draggable="false" />
             <span class="label">Home</span>
           </button>
@@ -50,7 +50,7 @@
 
           <button class="navBtn" id="navLeveling" onclick="go('leveling')">
             <img class="icon" src="assets/icons/leveling.png" alt="" draggable="false" />
-            <span class="label">Leveling Guide</span>
+            <span class="label">Leveling</span>
           </button>
 
           <button class="navBtn" id="navTips" onclick="go('tips')">
@@ -62,59 +62,117 @@
             <img class="icon" src="assets/icons/about.png" alt="" draggable="false" />
             <span class="label">About</span>
           </button>
-
         </nav>
 
         <div class="side-foot">
           <div class="hotkeys">
             <div class="hotkeys-title">Hotkeys</div>
             <div>F7: Minimize/Restore</div>
+            <div>Overlay: ESC closes</div>
           </div>
         </div>
       </aside>
 
-      <!-- CONTENT -->
+      <!-- Main content area -->
       <main class="content">
-        <section class="page active" id="page-home">
+        <section class="page" id="page-home">
           <h1>Home</h1>
-          <p>Welcome to Pie Guy Guide. Use the sidebar to open pages and overlays.</p>
+          <p>Welcome to Pie Guy Guide. Use the sidebar to navigate.</p>
           <div class="row">
-            <button class="primary" onclick="window.api.openMapOverlay()">Open Map Overlay</button>
-            <button class="primary" onclick="window.api.openDungeonOverlay()">Open Dungeons Overlay</button>
+            <button class="primary" onclick="window.api.openMap()">Open Map Overlay</button>
+            <button class="primary" onclick="window.api.openDungeon()">Open Dungeon Overlay</button>
           </div>
         </section>
 
         <section class="page" id="page-maps">
           <h1>Maps</h1>
-          <p>Open the map overlay (draggable window, zoom + pan, ESC closes).</p>
-          <button class="primary" onclick="window.api.openMapOverlay()">Open Map Overlay</button>
+          <p>Click to open the map overlay. Main app minimizes until you press ESC.</p>
+          <div class="row">
+            <button class="primary" onclick="window.api.openMap()">Open Map Overlay</button>
+          </div>
+          <p class="muted">Map images can be added later (we can wire in region buttons next).</p>
         </section>
 
         <section class="page" id="page-dungeons">
           <h1>Dungeons</h1>
-          <p>Open the dungeon overlay (same as maps). Add layout images later.</p>
-          <button class="primary" onclick="window.api.openDungeonOverlay()">Open Dungeons Overlay</button>
+          <p>Future dungeon layouts will live here. The overlay is ready.</p>
+          <div class="row">
+            <button class="primary" onclick="window.api.openDungeon()">Open Dungeon Overlay</button>
+          </div>
         </section>
 
-        <section class="page" id="page-leveling">
-          <h1>Leveling Guide</h1>
-          <p>Add your leveling guide text here.</p>
-          <ul>
-            <li>Recommended early skills</li>
-            <li>Training order</li>
-            <li>Best routes</li>
-          </ul>
-        </section>
+<section class="page" id="page-leveling">
+  <h1>Leveling Guide</h1>
+  <p class="muted">Broken down by level brackets. Open a section to read the route.</p>
+
+  <div class="leveling">
+
+    <details class="lvl" open>
+      <summary>0–10 (Anagoge)</summary>
+      <div class="lvlBody">
+        <p>I do not recommend leaving Angague until your combat skills are at least level 10. After level 5, you can easily move into the island's dungeon and down into the spider cave. The cave is huge, and it's a great place to grind. Don't bother picking up armor to later sell. Focus on things that stack and have value: strange dirt, femurs, and spider webs.</p>
+      </div>
+    </details>
+
+    <details class="lvl">
+      <summary>5–15(Dream Ilamari Desert)</summary>
+      <div class="lvlBody">
+        <p><strong>5-15 only!</strong> Go to the gold portal right outside of Serbule Keep this will transport you to a nerfed Ilamari Desert. Speak with Mirravere to begin the quest and look out for mobs with a crown above their head for grind quest. This is fastest way for 5-15 on a beginner character</p>
+
+       </div>
+    </details>
+
+    <details class="lvl">
+      <summary>15–20 (Serbule Crypt)</summary>
+      <div class="lvlBody">
+
+        <p>After completing Dream Ilamari Desert until atleast level 12, you can move directly to the Serbule Crypt. It's SW of Serbule in the corner. If the dungeon itself is too hard for you, the area outdoors has a number of skeletons around that are easy targets. Archers are the easiest to kill.</p>
+
+        <p><strong>@20</strong> Stay in Serbule Crypt. Spiders should be easy. Some of the harder undead should be just on the edge of your ability. Further down the undead hallway, between the giant undead boss and the rhino, is a hallway full of deer, ice elementals, and undead. This is a prime spot to grind since it doesn't have much foot traffic.</p>
+      </div>
+    </details>
+
+    <details class="lvl">
+      <summary>20–40</summary>
+      <div class="lvlBody">
+        <p>It's time to head for Eltibule. Keep an eye out for mobs with a silver crown. If you're not familiar with the mechanic, killing such a mob will grant you a kill quest for similar mobs. They're good xp at lower levels, and you're going to grind this content anyway.</p>
+
+        <p>From the drop, stay to your left. This area is full of wolves, panthers, green spiders, and fire spiders. Fire spiders may be a bit too much for you at first, but you should be able to handle the rest. It's a perfect time to also work on your mycology, myconic, and foraging skills.</p>
+
+        <p><strong>@25 – 30 The Myconian Cave.</strong> You need a minimum of 8 myconic, and I recommend 10. It's time to go to the Myconian Cave. There are mushrooms distributed around northern Serbule that when talked to, will teleport you inside the dungeon. The location of these mushrooms changes every few hours, so it can take a little running around to locate them. Avoid the bosses unless you have a group. Their curses are particularly bad.</p>
+
+        <p><strong>@30 – 35 The Goblin Dungeon in Serbule.</strong> This is one of the greatest dungeons in the game. It's huge, and it's well-structured. Easier mobs are up top, but as you descend down you'll find that it gets more difficult. It's a perfect place to grind all the way from 40–45. If you have a group capable of defeating the Fog, venture further in and take a left when the path splits. You'll find a series of three rooms with elementals guarding red crystals. If you kill the crystals, then the elementals disappear and stop spawning. <strong>Do not kill the red crystals</strong> and you have a fast-spawning feed of high-xp mobs available for your group to farm.</p>
+      </div>
+    </details>
+
+    <details class="lvl">
+      <summary>40–60</summary>
+      <div class="lvlBody">
+        <p>It's time to go to Kur Tower. The portal is a short run from where the portal to Kur (in Eltibule) will drop you. If you die, that's fine, just try again. There's no cold damage inside. You can easily grind from 40–60 here, and there's often folks inside to group with.</p>
+      </div>
+    </details>
+
+    <details class="lvl">
+      <summary>60–70</summary>
+      <div class="lvlBody">
+        <p>You're almost there. It's time to grind out the last levels in the Wolf Cave, which is also located in Kur. You can make a good deal of money here by skinning the werewolves, so keep a skinning knife on you.</p>
+      </div>
+    </details>
+
+  </div>
+</section>
+
 
         <section class="page" id="page-tips">
           <h1>Tips</h1>
           <ul>
-            <li>Use food buffs for faster progress</li>
-            <li>Sell often to keep inventory clean</li>
-            <li>Train gathering alongside combat</li>
+            <li>Keep food buffs up for faster progress.</li>
+            <li>Train gathering alongside combat.</li>
+            <li>Sell often to keep inventory clean.</li>
           </ul>
         </section>
 
+        <!-- DEFAULT PAGE -->
         <section class="page aboutPage" id="page-about">
           <h1>About</h1>
           <div class="aboutBox">
@@ -123,7 +181,6 @@
           </div>
         </section>
       </main>
-
     </div>
   </div>
 
