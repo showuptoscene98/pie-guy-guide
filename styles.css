@@ -78,21 +78,20 @@ body{
 /* layout */
 .layout{
   flex:1;
-  display:grid;
-  grid-template-columns: 72px 1fr; /* collapsed sidebar */
+  display:flex;
   height: calc(100vh - 44px);
 }
 
 /* sidebar hover expand + subtle motion */
 .sidebar{
-  width:72px;
+  flex: 0 0 72px;
   background: var(--sidebar);
   border-right: 1px solid var(--border);
   padding:10px;
   overflow:hidden;
 
   /* smoother, premium expand */
-  transition: width 260ms cubic-bezier(.2,.9,.2,1);
+  transition: flex-basis 260ms cubic-bezier(.2,.9,.2,1);
 
   -webkit-app-region: no-drag;
   display:flex;
@@ -104,7 +103,7 @@ body{
 }
 
 .sidebar:hover{
-  width: 250px;
+  flex-basis: 250px;
 }
 
 /* head */
@@ -258,6 +257,7 @@ body{
 
 /* content */
 .content{
+  flex:1;
   background: var(--contentGrey);
   padding:16px;
   overflow:auto;
