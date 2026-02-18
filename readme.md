@@ -9,18 +9,3 @@ Electron + Node.js desktop guide/overlay app.
 ```bash
 npm install
 npm start
-
-
-
----
-
-## 5) Push to GitHub
-From your project folder:
-
-```bash
-git init
-git add .
-git commit -m "Initial commit"
-git branch -M main
-git remote add origin https://github.com/YOURNAME/YOURREPO.git
-git push -u origin main
