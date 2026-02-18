@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Dungeons Overlay</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="overlayRoot">
+    <div class="overlayTopbar">
+      <div style="font-weight:950;">Dungeons Overlay <span style="color:rgba(233,238,252,0.70); font-weight:700; font-size:12px;">(ESC closes)</span></div>
+      <div class="overlayControls">
+        <button class="overlayCloseBtn" onclick="window.api.closeOverlay()">Close</button>
+      </div>
+    </div>
+
+    <div class="overlayLayout">
+      <div class="overlaySidebar">
+        <button class="overlayBtn" onclick="loadDungeon('Ilmari.jpg')">Placeholder Layout</button>
+        <button class="overlayBtn" onclick="loadDungeon('Ilmari.jpg')">Coming Soon</button>
+        <button class="overlayBtn" onclick="loadDungeon('Ilmari.jpg')">Add New Layout Later</button>
+      </div>
+
+      <div class="viewer" id="viewer">
+        <img id="mapImage" alt="Dungeon Layout" draggable="false" />
+      </div>
+    </div>
+  </div>
+
+  <script src="dungeon.js"></script>
+</body>
+</html>

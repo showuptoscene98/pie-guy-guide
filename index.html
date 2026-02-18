@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Pie Guy Guide</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">Pie Guy Guide</div>
+        <div class="topbar-sub">Use the sidebar to navigate pages</div>
+      </div>
+      <div class="topbar-controls">
+        <button class="topbtn" onclick="window.api.mainMinimize()">—</button>
+        <button class="topbtn danger" onclick="window.api.mainClose()">✕</button>
+      </div>
+    </div>
+
+    <div class="layout">
+
+      <!-- SLIDE SIDEBAR -->
+      <aside class="sidebar">
+        <div class="side-head">
+          <img src="assets/logo.png" class="logo" alt="Pie Guy" draggable="false" />
+          <div class="brand">
+            <div class="brand-name">Pie Guy</div>
+            <div class="brand-sub">Project Gorgon Companion</div>
+          </div>
+        </div>
+
+        <nav class="nav">
+
+          <button class="navBtn active" id="navHome" onclick="go('home')">
+            <img class="icon" src="assets/icons/home.png" alt="" draggable="false" />
+            <span class="label">Home</span>
+          </button>
+
+          <button class="navBtn" id="navMaps" onclick="go('maps')">
+            <img class="icon" src="assets/icons/maps.png" alt="" draggable="false" />
+            <span class="label">Maps</span>
+          </button>
+
+          <button class="navBtn" id="navDungeons" onclick="go('dungeons')">
+            <img class="icon" src="assets/icons/dungeons.png" alt="" draggable="false" />
+            <span class="label">Dungeons</span>
+          </button>
+
+          <button class="navBtn" id="navLeveling" onclick="go('leveling')">
+            <img class="icon" src="assets/icons/leveling.png" alt="" draggable="false" />
+            <span class="label">Leveling Guide</span>
+          </button>
+
+          <button class="navBtn" id="navTips" onclick="go('tips')">
+            <img class="icon" src="assets/icons/tips.png" alt="" draggable="false" />
+            <span class="label">Tips</span>
+          </button>
+
+          <button class="navBtn" id="navAbout" onclick="go('about')">
+            <img class="icon" src="assets/icons/about.png" alt="" draggable="false" />
+            <span class="label">About</span>
+          </button>
+
+        </nav>
+
+        <div class="side-foot">
+          <div class="hotkeys">
+            <div class="hotkeys-title">Hotkeys</div>
+            <div>F7: Minimize/Restore</div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- CONTENT -->
+      <main class="content">
+        <section class="page active" id="page-home">
+          <h1>Home</h1>
+          <p>Welcome to Pie Guy Guide. Use the sidebar to open pages and overlays.</p>
+          <div class="row">
+            <button class="primary" onclick="window.api.openMapOverlay()">Open Map Overlay</button>
+            <button class="primary" onclick="window.api.openDungeonOverlay()">Open Dungeons Overlay</button>
+          </div>
+        </section>
+
+        <section class="page" id="page-maps">
+          <h1>Maps</h1>
+          <p>Open the map overlay (draggable window, zoom + pan, ESC closes).</p>
+          <button class="primary" onclick="window.api.openMapOverlay()">Open Map Overlay</button>
+        </section>
+
+        <section class="page" id="page-dungeons">
+          <h1>Dungeons</h1>
+          <p>Open the dungeon overlay (same as maps). Add layout images later.</p>
+          <button class="primary" onclick="window.api.openDungeonOverlay()">Open Dungeons Overlay</button>
+        </section>
+
+        <section class="page" id="page-leveling">
+          <h1>Leveling Guide</h1>
+          <p>Add your leveling guide text here.</p>
+          <ul>
+            <li>Recommended early skills</li>
+            <li>Training order</li>
+            <li>Best routes</li>
+          </ul>
+        </section>
+
+        <section class="page" id="page-tips">
+          <h1>Tips</h1>
+          <ul>
+            <li>Use food buffs for faster progress</li>
+            <li>Sell often to keep inventory clean</li>
+            <li>Train gathering alongside combat</li>
+          </ul>
+        </section>
+
+        <section class="page aboutPage" id="page-about">
+          <h1>About</h1>
+          <div class="aboutBox">
+            <p class="aboutText">Come Join us in the multi-game family that has grown over the years!</p>
+            <a class="discord" href="https://discord.com/invite/NAH5bejC2g" target="_blank">Join Our Discord</a>
+          </div>
+        </section>
+      </main>
+
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

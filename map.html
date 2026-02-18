@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Maps Overlay</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="overlayRoot">
+    <div class="overlayTopbar">
+      <div style="font-weight:950;">Maps Overlay <span style="color:rgba(233,238,252,0.70); font-weight:700; font-size:12px;">(ESC closes)</span></div>
+      <div class="overlayControls">
+        <button class="overlayCloseBtn" onclick="window.api.closeOverlay()">Close</button>
+      </div>
+    </div>
+
+    <div class="overlayLayout">
+      <div class="overlaySidebar">
+        <button class="overlayBtn" onclick="loadMap('AnagogeIsland.jpg')">Anagoge Island</button>
+        <button class="overlayBtn" onclick="loadMap('Eltibule.jpg')">Eltibule</button>
+        <button class="overlayBtn" onclick="loadMap('Fae realm.jpg')">Fae Realm</button>
+        <button class="overlayBtn" onclick="loadMap('Gazluk.jpg')">Gazluk</button>
+        <button class="overlayBtn" onclick="loadMap('Ilmari.jpg')">Ilmari</button>
+        <button class="overlayBtn" onclick="loadMap('Kur Mountains.jpg')">Kur Mountains</button>
+        <button class="overlayBtn" onclick="loadMap('Povus.jpg')">Povus</button>
+        <button class="overlayBtn" onclick="loadMap('Rahu.jpg')">Rahu</button>
+        <button class="overlayBtn" onclick="loadMap('Serbule.jpg')">Serbule</button>
+        <button class="overlayBtn" onclick="loadMap('SerbuleHills.jpg')">Serbule Hills</button>
+        <button class="overlayBtn" onclick="loadMap('Sun Vale.jpg')">Sun Vale</button>
+      </div>
+
+      <div class="viewer" id="viewer">
+        <img id="mapImage" alt="Map" draggable="false" />
+      </div>
+    </div>
+  </div>
+
+  <script src="map.js"></script>
+</body>
+</html>
