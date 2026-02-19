@@ -82,6 +82,16 @@
             <button class="primary" onclick="window.api.openMap()">Open Map Overlay</button>
             <button class="primary" onclick="window.api.openDungeon()">Open Dungeon Overlay</button>
           </div>
+          <div class="home-updates">
+            <div class="home-updates-head">
+              <h2>Project Gorgon updates</h2>
+              <button type="button" class="primary home-updates-refresh" id="pgNewsRefresh">Refresh</button>
+            </div>
+            <div class="home-updates-list" id="pgNewsList">
+              <div class="home-updates-loading muted" id="pgNewsLoading">Loading update notes…</div>
+              <div class="home-updates-error hidden" id="pgNewsError"></div>
+            </div>
+          </div>
         </section>
 
         <section class="page" id="page-maps">
@@ -175,9 +185,17 @@
         <!-- DEFAULT PAGE -->
         <section class="page aboutPage" id="page-about">
           <h1>About</h1>
+          <div class="updateBanner hidden" id="updateBanner">
+            <span class="updateBanner-text" id="updateBannerText"></span>
+            <button class="primary updateBanner-btn" id="updateRestartBtn" style="display:none;">Restart to update</button>
+          </div>
           <div class="aboutBox">
             <p class="aboutText">Come Join us in the multi-game family that has grown over the years!</p>
             <a class="discord" href="https://discord.com/invite/NAH5bejC2g" target="_blank">Join Our Discord</a>
+            <div class="aboutUpdates">
+              <span class="aboutVersion" id="appVersion">v —</span>
+              <button type="button" class="primary aboutCheckBtn" id="checkUpdatesBtn">Check for updates</button>
+            </div>
           </div>
         </section>
       </main>
