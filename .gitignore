@@ -5,8 +5,9 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Electron build output
-dist/
+# Electron build output (setup installer is tracked for distribution)
+dist/*
+!dist/Pie Guy Guide-Setup-*.exe
 out/
 release/
 *.asar
