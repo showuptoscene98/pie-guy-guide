@@ -29,6 +29,60 @@ body{
     linear-gradient(180deg, #111 0%, #0b0b0b 100%);
 }
 
+/* Theme: Dark – gold accent on sidebar (default) */
+body[data-theme="dark"] .sidebar{ border-left-color:var(--gold); }
+
+/* Theme: Dark Red – sidebar darker red + gold */
+body[data-theme="dark-red"] .sidebar{
+  background:rgba(45,18,18,0.92);
+  border-left:3px solid var(--gold);
+}
+body[data-theme="dark-red"] .side-head,
+body[data-theme="dark-red"] .navBtn{
+  background:rgba(60,25,25,0.8);
+}
+body[data-theme="dark-red"] .navBtn:hover{
+  background:rgba(80,35,35,0.9);
+}
+
+/* Theme: Normal – sidebar gray, rest black + gold accent */
+body[data-theme="normal"]{
+  background:#0b0b0b;
+}
+body[data-theme="normal"] .topbar{
+  background:#0b0b0b;
+}
+body[data-theme="normal"] .sidebar{
+  background:rgba(55,55,55,0.95);
+  border-right-color:rgba(255,255,255,0.12);
+  border-left:3px solid var(--gold);
+}
+body[data-theme="normal"] .side-head,
+body[data-theme="normal"] .sidebar-opacity,
+body[data-theme="normal"] .hotkeys{
+  border-color:rgba(255,255,255,0.12);
+}
+body[data-theme="normal"] .side-head{
+  background:rgba(255,255,255,0.06);
+}
+body[data-theme="normal"] .navBtn{
+  background:#404040;
+  border-color:rgba(255,255,255,0.12);
+}
+body[data-theme="normal"] .navBtn:hover{
+  background:#505050;
+}
+body[data-theme="normal"] .content{
+  background:#111;
+}
+body[data-theme="normal"] .content .aboutBox,
+body[data-theme="normal"] .content .lvl,
+body[data-theme="normal"] .lvlBody,
+body[data-theme="normal"] .home-update-item{
+  background:#1a1a1a;
+  border-color:rgba(255,255,255,0.12);
+}
+
 .app{
   height:100vh;
   display:flex;
@@ -168,7 +222,7 @@ body{
   top:100%;
   right:0;
   margin-top:6px;
-  min-width:220px;
+  min-width:320px;
   padding:10px 0;
   background:#1a1a1a;
   border:1px solid var(--border);
@@ -212,6 +266,26 @@ body{
   cursor:pointer;
 }
 
+.options-theme-row{
+  flex-direction:column;
+  align-items:stretch;
+  gap:6px;
+}
+.options-theme-row select{
+  width:100%;
+  padding:6px 8px;
+  font-size:12px;
+  background:#222;
+  border:1px solid rgba(255,255,255,0.2);
+  border-radius:8px;
+  color:var(--text);
+  cursor:pointer;
+}
+.options-theme-row select:focus{
+  outline:none;
+  border-color:rgba(255,204,77,0.5);
+}
+
 .topbtn{
   width:40px;
   height:28px;
@@ -251,6 +325,7 @@ body{
   -webkit-backdrop-filter: blur(8px);
 
   border-right:1px solid var(--border);
+  border-left:3px solid var(--gold);
 
   display:flex;
   flex-direction:column;
@@ -408,6 +483,10 @@ body{
   font-size:12px;
   color:var(--muted);
 }
+.hotkeys-title{
+  font-weight:700;
+  margin-bottom:4px;
+}
 
 /* ================= CONTENT AREA ================= */
 
@@ -491,6 +570,54 @@ p, li{
 .updateBanner.hidden{ display:none; }
 .updateBanner-text{ color:var(--text); }
 .updateBanner-btn{ flex-shrink:0; }
+
+/* Update available popup modal */
+.updateModal{
+  position:fixed;
+  inset:0;
+  z-index:1000;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+.updateModal.hidden{ display:none; }
+.updateModal-backdrop{
+  position:absolute;
+  inset:0;
+  background:rgba(0,0,0,0.7);
+}
+.updateModal-box{
+  position:relative;
+  background:var(--contentGrey2);
+  border:1px solid var(--gold);
+  border-radius:16px;
+  padding:24px;
+  max-width:400px;
+  width:100%;
+  box-shadow:0 12px 40px rgba(0,0,0,0.5);
+}
+.updateModal-title{
+  margin:0 0 12px;
+  font-size:20px;
+  color:var(--gold);
+}
+.updateModal-text{
+  margin:0 0 20px;
+  color:var(--muted);
+  line-height:1.5;
+}
+.updateModal-actions{
+  display:flex;
+  gap:10px;
+  justify-content:flex-end;
+}
+.updateModal-btn{ padding:10px 18px; font-size:13px; cursor:pointer; border-radius:10px; border:1px solid rgba(255,255,255,0.2); }
+.updateModal-btn-secondary{ background:#333; color:var(--text); }
+.updateModal-btn-secondary:hover{ background:#444; }
+.updateModal-btn-primary{ background:var(--goldSoft); color:var(--text); border-color:var(--gold); font-weight:700; }
+.updateModal-btn-primary:hover{ background:rgba(255,204,77,0.3); }
+
 .aboutUpdates{
   margin-top:16px;
   padding-top:16px;

@@ -61,6 +61,7 @@ function setupOptionsUI() {
   const cogBtn = document.getElementById("optionsCogBtn");
   const dropdown = document.getElementById("optionsDropdown");
   const anchorCheck = document.getElementById("optionAnchorOverlays");
+  const themeSelect = document.getElementById("optionTheme");
   if (!cogBtn || !dropdown || !anchorCheck || !window.api) return;
 
   function openDropdown() {
@@ -84,12 +85,28 @@ function setupOptionsUI() {
     window.api.setOverlayAnchorPreference(anchorCheck.checked);
   });
 
+  function applyTheme(theme) {
+    const t = theme || "dark-red";
+    document.body.setAttribute("data-theme", t);
+    if (themeSelect) themeSelect.value = t;
+  }
+  if (themeSelect) {
+    themeSelect.addEventListener("change", () => {
+      const v = themeSelect.value;
+      window.api.setTheme(v);
+      applyTheme(v);
+    });
+  }
+
   document.addEventListener("click", (e) => {
     if (!dropdown.classList.contains("hidden") && !e.target.closest(".options-wrap")) closeDropdown();
   });
 
   window.api.getOverlayAnchorPreference().then((v) => {
     anchorCheck.checked = !!v;
+  });
+  window.api.getTheme().then((v) => {
+    applyTheme(v);
   });
 }
 
@@ -120,6 +137,11 @@ function setupUpdaterUI() {
   const restartBtn = document.getElementById("updateRestartBtn");
   const versionEl = document.getElementById("appVersion");
   const checkBtn = document.getElementById("checkUpdatesBtn");
+  const modal = document.getElementById("updateModal");
+  const modalTitle = document.getElementById("updateModalTitle");
+  const modalText = document.getElementById("updateModalText");
+  const modalLater = document.getElementById("updateModalLater");
+  const modalRestart = document.getElementById("updateModalRestart");
 
   if (!window.api || !window.api.getAppVersion) return;
 
@@ -136,6 +158,16 @@ function setupUpdaterUI() {
   function hideBanner() {
     if (banner) banner.classList.add("hidden");
   }
+  function showUpdateModal(title, text, showRestartBtn) {
+    if (!modal || !modalTitle || !modalText) return;
+    modalTitle.textContent = title;
+    modalText.textContent = text;
+    if (modalRestart) modalRestart.style.display = showRestartBtn ? "inline-block" : "none";
+    modal.classList.remove("hidden");
+  }
+  function hideUpdateModal() {
+    if (modal) modal.classList.add("hidden");
+  }
 
   window.api.onUpdaterChecking(() => {
     if (checkBtn) checkBtn.disabled = true;
@@ -148,6 +180,7 @@ function setupUpdaterUI() {
   window.api.onUpdaterUpdateAvailable((info) => {
     const ver = (info && info.version) ? info.version : "new version";
     showBanner("Update available: " + ver + ". Downloading…", false);
+    showUpdateModal("Update available", "Version " + ver + " is available. Downloading in the background…", false);
     if (checkBtn) checkBtn.disabled = false;
   });
   window.api.onUpdaterUpdateNotAvailable(() => {
@@ -155,14 +188,24 @@ function setupUpdaterUI() {
     if (checkBtn) checkBtn.disabled = false;
     setTimeout(hideBanner, 3000);
   });
-  window.api.onUpdaterUpdateDownloaded(() => {
+  window.api.onUpdaterUpdateDownloaded((info) => {
+    const ver = (info && info.version) ? info.version : "";
     showBanner("Update ready. Restart the app to install.", true);
+    showUpdateModal("Update ready", "The new version has been downloaded. Restart the app to install.", true);
+    if (modalText && ver) modalText.textContent = "Version " + ver + " is ready. Restart the app to install.";
     if (checkBtn) checkBtn.disabled = false;
   });
   window.api.onUpdaterError((err) => {
     showBanner("Update check failed: " + (err || "Unknown error"), false);
     if (checkBtn) checkBtn.disabled = false;
+    hideUpdateModal();
   });
+
+  if (modalLater) modalLater.addEventListener("click", hideUpdateModal);
+  if (modalRestart) modalRestart.addEventListener("click", () => window.api.quitAndInstall());
+  if (modal && modal.querySelector(".updateModal-backdrop")) {
+    modal.querySelector(".updateModal-backdrop").addEventListener("click", hideUpdateModal);
+  }
 
   if (checkBtn) {
     checkBtn.addEventListener("click", () => window.api.checkForUpdates());

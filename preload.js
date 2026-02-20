@@ -16,6 +16,8 @@ contextBridge.exposeInMainWorld("api", {
   onOverlayClickthroughState: (cb) => ipcRenderer.on("overlay:clickthroughState", (e, value) => cb(value)),
   getOverlayAnchorPreference: () => ipcRenderer.invoke("overlay:getAnchorPreference"),
   setOverlayAnchorPreference: (value) => ipcRenderer.send("overlay:setAnchorPreference", value),
+  getTheme: () => ipcRenderer.invoke("preferences:getTheme"),
+  setTheme: (value) => ipcRenderer.send("preferences:setTheme", value),
 
   // Updater
   checkForUpdates: () => ipcRenderer.send("updater:check"),

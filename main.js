@@ -84,6 +84,7 @@ let dungeonClickthrough = false;
 let wikiWindow = null;
 let currentOpacity = 1;
 let overlayAnchorTopRight = true;
+let themePreference = "dark-red";
 
 const PREFERENCES_PATH = path.join(app.getPath("userData"), "preferences.json");
 
@@ -92,12 +93,13 @@ function loadPreferences() {
     const raw = fs.readFileSync(PREFERENCES_PATH, "utf8");
     const prefs = JSON.parse(raw);
     if (typeof prefs.overlayAnchorTopRight === "boolean") overlayAnchorTopRight = prefs.overlayAnchorTopRight;
+    if (typeof prefs.theme === "string" && ["dark", "dark-red", "normal"].includes(prefs.theme)) themePreference = prefs.theme;
   } catch (_) {}
 }
 
 function savePreferences() {
   try {
-    fs.writeFileSync(PREFERENCES_PATH, JSON.stringify({ overlayAnchorTopRight }), "utf8");
+    fs.writeFileSync(PREFERENCES_PATH, JSON.stringify({ overlayAnchorTopRight, theme: themePreference }), "utf8");
   } catch (_) {}
 }
 
@@ -315,8 +317,7 @@ function setupAutoUpdater() {
 
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
-  // Allow pre-release so updates show even if a release is marked Pre-release on GitHub (GitHub /releases/latest ignores those)
-  autoUpdater.allowPrerelease = true;
+  autoUpdater.allowPrerelease = false;
   autoUpdater.channel = "latest";
 
   const sendStatus = (channel, ...args) => {
@@ -326,7 +327,13 @@ function setupAutoUpdater() {
   };
 
   autoUpdater.on("checking-for-update", () => sendStatus("updater:checking"));
-  autoUpdater.on("update-available", (info) => sendStatus("updater:update-available", info));
+  autoUpdater.on("update-available", (info) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.show();
+      mainWindow.focus();
+    }
+    sendStatus("updater:update-available", info);
+  });
   autoUpdater.on("update-not-available", (info) => sendStatus("updater:update-not-available", info));
   autoUpdater.on("download-progress", (progress) => sendStatus("updater:download-progress", progress));
   autoUpdater.on("update-downloaded", (info) => sendStatus("updater:update-downloaded", info));
@@ -335,8 +342,9 @@ function setupAutoUpdater() {
     sendStatus("updater:error", err.message || String(err));
   });
 
-  // Auto-check shortly after app ready
+  // Auto-check shortly after app ready, then every 4 hours
   setTimeout(() => autoUpdater.checkForUpdates(), 3000);
+  setInterval(() => autoUpdater.checkForUpdates(), 4 * 60 * 60 * 1000);
 }
 
 app.whenReady().then(() => {
@@ -482,6 +490,13 @@ ipcMain.on("overlay:setAnchorPreference", (event, value) => {
   overlayAnchorTopRight = !!value;
   savePreferences();
 });
+ipcMain.handle("preferences:getTheme", () => themePreference);
+ipcMain.on("preferences:setTheme", (event, value) => {
+  if (typeof value === "string" && ["dark", "dark-red", "normal"].includes(value)) {
+    themePreference = value;
+    savePreferences();
+  }
+});
 
 ipcMain.on("overlay:setClickthrough", (event, enabled) => {
   const win = BrowserWindow.fromWebContents(event.sender);
@@ -571,11 +586,14 @@ ipcMain.handle("wiki:search", (event, query) => fetchWikiSearch(query));
 
 function createOrShowWikiWindow(url) {
   if (wikiWindow && !wikiWindow.isDestroyed()) {
+    if (mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible()) minimizeMainToTray();
     wikiWindow.loadURL(url);
     wikiWindow.show();
     wikiWindow.focus();
     return;
   }
+  if (mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible()) minimizeMainToTray();
+
   wikiWindow = new BrowserWindow({
     width: 960,
     height: 700,
@@ -592,6 +610,7 @@ function createOrShowWikiWindow(url) {
   wikiWindow.loadURL(url);
   wikiWindow.on("closed", () => {
     wikiWindow = null;
+    restoreMainIfMinimized();
   });
 }
 

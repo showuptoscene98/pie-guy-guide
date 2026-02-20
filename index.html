@@ -5,7 +5,7 @@
   <title>Pie Guy Guide</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body>
+<body data-theme="dark-red">
   <div class="app">
 
     <!-- Topbar (drag region) -->
@@ -29,6 +29,14 @@
               <input type="checkbox" id="optionAnchorOverlays" checked />
               <span>Anchor map & dungeon to top right</span>
             </label>
+            <div class="options-dropdown-item options-theme-row">
+              <label for="optionTheme">Theme</label>
+              <select id="optionTheme" aria-label="Theme">
+                <option value="dark">Dark Mode</option>
+                <option value="dark-red" selected>Dark Red</option>
+                <option value="normal">Normal</option>
+              </select>
+            </div>
           </div>
         </div>
         <button type="button" class="topbtn" onclick="window.api?.mainMinimize?.()">—</button>
@@ -218,6 +226,19 @@
           </div>
         </section>
       </main>
+    </div>
+  </div>
+
+  <!-- Update available popup -->
+  <div class="updateModal hidden" id="updateModal">
+    <div class="updateModal-backdrop"></div>
+    <div class="updateModal-box">
+      <h2 class="updateModal-title" id="updateModalTitle">Update available</h2>
+      <p class="updateModal-text" id="updateModalText"></p>
+      <div class="updateModal-actions">
+        <button type="button" class="primary updateModal-btn updateModal-btn-secondary" id="updateModalLater">Later</button>
+        <button type="button" class="primary updateModal-btn updateModal-btn-primary" id="updateModalRestart" style="display:none;">Restart to update</button>
+      </div>
     </div>
   </div>
 
