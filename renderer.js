@@ -31,6 +31,33 @@ function go(name) {
 
 // Default page on launch:
 go("about");
+
+// ——— Opacity slider (sidebar) ———
+function setupOpacitySlider() {
+  const slider = document.getElementById("opacitySlider");
+  const valueEl = document.getElementById("opacityValue");
+  const STORAGE_KEY = "pieguy-opacity";
+  const defaultOpacity = 100;
+
+  if (!slider || !valueEl || !window.api?.setWindowOpacity) return;
+
+  function applyOpacity(percent) {
+    const p = Math.min(100, Math.max(30, Number(percent)));
+    slider.value = p;
+    valueEl.textContent = p + "%";
+    const ratio = p / 100;
+    window.api.setWindowOpacity(ratio);
+    try { localStorage.setItem(STORAGE_KEY, String(p)); } catch (_) {}
+  }
+
+  const saved = localStorage.getItem(STORAGE_KEY);
+  const initial = saved !== null ? Number(saved) : defaultOpacity;
+  if (Number.isFinite(initial)) applyOpacity(initial);
+
+  slider.addEventListener("input", () => applyOpacity(slider.value));
+}
+
+setupOpacitySlider();
 // Leveling accordion: only one bracket open at a time
 function setupLevelingAccordion() {
   const container = document.querySelector("#page-leveling .leveling");

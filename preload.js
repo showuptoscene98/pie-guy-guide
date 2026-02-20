@@ -4,11 +4,14 @@ contextBridge.exposeInMainWorld("api", {
   // Main window
   mainMinimize: () => ipcRenderer.send("main:minimize"),
   mainClose: () => ipcRenderer.send("main:close"),
+  setWindowOpacity: (value) => ipcRenderer.send("main:setOpacity", value),
 
   // Overlays
   openMap: () => ipcRenderer.send("overlay:openMap"),
   openDungeon: () => ipcRenderer.send("overlay:openDungeon"),
   closeOverlay: () => ipcRenderer.send("overlay:close"),
+  setOverlayClickthrough: (enabled) => ipcRenderer.send("overlay:setClickthrough", enabled),
+  onOverlayClickthroughState: (cb) => ipcRenderer.on("overlay:clickthroughState", (e, value) => cb(value)),
 
   // Updater
   checkForUpdates: () => ipcRenderer.send("updater:check"),

@@ -70,10 +70,15 @@
         </nav>
 
         <div class="side-foot">
+          <div class="sidebar-opacity">
+            <label for="opacitySlider" class="sidebar-opacity-label">Opacity</label>
+            <input type="range" id="opacitySlider" class="sidebar-opacity-slider" min="30" max="100" value="100" />
+            <span class="sidebar-opacity-value" id="opacityValue">100%</span>
+          </div>
           <div class="hotkeys">
             <div class="hotkeys-title">Hotkeys</div>
             <div>F7: Minimize/Restore</div>
-            <div>Overlay: ESC closes</div>
+            <div>Overlay: ESC closes, F8 click-through</div>
           </div>
         </div>
       </aside>

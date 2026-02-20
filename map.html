@@ -83,6 +83,18 @@
     color:rgba(255,255,255,0.70);
     margin-top:2px;
   }
+
+  .clickthrough-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    -webkit-app-region: no-drag;
+  }
+  .clickthrough-wrap label {
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+  }
 </style>
 </head>
 <body tabindex="0">
@@ -91,7 +103,11 @@
   <div class="toprow">
     <div>
       <div style="font-weight:900;">Maps</div>
-      <div class="hint">Drag to pan • Mouse wheel zooms at cursor • ESC closes</div>
+      <div class="hint">Drag to pan • Mouse wheel zooms • ESC closes • F8 click-through</div>
+    </div>
+    <div class="clickthrough-wrap">
+      <input type="checkbox" id="clickthroughCheck" />
+      <label for="clickthroughCheck">Click-through</label>
     </div>
     <button class="btn" style="-webkit-app-region:no-drag;" onclick="window.api.closeOverlay()">Close</button>
   </div>
@@ -122,6 +138,17 @@
   window.addEventListener("keydown", (e) => {
     if (e.key === "Escape") window.api.closeOverlay();
   });
+
+  // Click-through option (F8 toggles when overlay can't be clicked)
+  const clickthroughCheck = document.getElementById("clickthroughCheck");
+  if (clickthroughCheck && window.api) {
+    clickthroughCheck.addEventListener("change", () => {
+      window.api.setOverlayClickthrough(clickthroughCheck.checked);
+    });
+    window.api.onOverlayClickthroughState?.((value) => {
+      clickthroughCheck.checked = !!value;
+    });
+  }
 
   const maps = [
     "AnagogeIsland",
