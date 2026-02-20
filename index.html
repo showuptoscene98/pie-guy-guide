@@ -15,9 +15,14 @@
         <div class="topbar-sub">Project Gorgon Companion</div>
       </div>
 
+      <div class="topbar-search-wrap" id="wikiSearchWrap">
+        <input type="search" class="topbar-search" id="wikiSearchInput" placeholder="Search Project Gorgon Wiki…" autocomplete="off" />
+        <div class="topbar-search-results hidden" id="wikiSearchResults"></div>
+      </div>
+
       <div class="topbar-controls">
-        <button class="topbtn" onclick="window.api.mainMinimize()">—</button>
-        <button class="topbtn danger" onclick="window.api.mainClose()">✕</button>
+        <button type="button" class="topbtn" onclick="window.api?.mainMinimize?.()">—</button>
+        <button type="button" class="topbtn danger" onclick="window.api?.mainClose?.()">✕</button>
       </div>
     </div>
 
@@ -78,17 +83,16 @@
         <section class="page" id="page-home">
           <h1>Home</h1>
           <p>Welcome to Pie Guy Guide. Use the sidebar to navigate.</p>
-          <div class="row">
-            <button class="primary" onclick="window.api.openMap()">Open Map Overlay</button>
-            <button class="primary" onclick="window.api.openDungeon()">Open Dungeon Overlay</button>
-          </div>
           <div class="home-updates">
+            <div class="home-updates-brand">
+              <img src="assets/logo.png" alt="Pie Guy" class="home-updates-logo" />
+              <h2 class="home-updates-patch-title">Patch notes</h2>
+            </div>
             <div class="home-updates-head">
-              <h2>Project Gorgon updates</h2>
               <button type="button" class="primary home-updates-refresh" id="pgNewsRefresh">Refresh</button>
             </div>
             <div class="home-updates-list" id="pgNewsList">
-              <div class="home-updates-loading muted" id="pgNewsLoading">Loading update notes…</div>
+              <div class="home-updates-loading muted hidden" id="pgNewsLoading">Loading update notes…</div>
               <div class="home-updates-error hidden" id="pgNewsError"></div>
             </div>
           </div>
@@ -98,16 +102,16 @@
           <h1>Maps</h1>
           <p>Click to open the map overlay. Main app minimizes until you press ESC.</p>
           <div class="row">
-            <button class="primary" onclick="window.api.openMap()">Open Map Overlay</button>
+            <button type="button" class="primary" onclick="window.api?.openMap?.()">Open Map Overlay</button>
           </div>
-          <p class="muted">Map images can be added later (we can wire in region buttons next).</p>
+          <p class="muted">Map images are updated as new resources become available.</p>
         </section>
 
         <section class="page" id="page-dungeons">
           <h1>Dungeons</h1>
-          <p>Future dungeon layouts will live here. The overlay is ready.</p>
+          <p>Future dungeon layouts will be added as new dungeons are released.</p>
           <div class="row">
-            <button class="primary" onclick="window.api.openDungeon()">Open Dungeon Overlay</button>
+            <button type="button" class="primary" onclick="window.api?.openDungeon?.()">Open Dungeon Overlay</button>
           </div>
         </section>
 
@@ -176,9 +180,9 @@
         <section class="page" id="page-tips">
           <h1>Tips</h1>
           <ul>
-            <li>Keep food buffs up for faster progress.</li>
-            <li>Train gathering alongside combat.</li>
-            <li>Sell often to keep inventory clean.</li>
+            <li>Keep food buffs up for faster progress and health regen.</li>
+            <li>Train foraging alongside combat this will help in the endgame.</li>
+            <li>Sell often to keep inventory clean and free up space be mindful of the npc you sell they have limited coins</li>
           </ul>
         </section>
 
