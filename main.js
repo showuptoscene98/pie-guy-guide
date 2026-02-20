@@ -42,7 +42,14 @@ function parsePgNews(raw) {
     const firstNewline = trimmed.indexOf("\n");
     const dateLine = firstNewline === -1 ? trimmed : trimmed.slice(0, firstNewline);
     let body = firstNewline === -1 ? "" : trimmed.slice(firstNewline + 1).trim();
+    // Preserve paragraph boundaries before collapsing whitespace (renderer splits on \n\n)
+    const PARA = "\x00PARA\x00";
+    body = body
+      .replace(/<\/p>\s*/gi, PARA)
+      .replace(/<br\s*\/?>\s*/gi, PARA)
+      .replace(/\n\s*\n/g, PARA);
     body = body.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    body = body.split(PARA).join("\n\n").replace(/(\n\n)+/g, "\n\n").trim();
     const date = dateLine.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
     if (date && date.length < 80) updates.push({ date, body });
   }
