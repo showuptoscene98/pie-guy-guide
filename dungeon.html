@@ -173,6 +173,11 @@
   }
 
   function loadDungeon(name){
+    dungeonImage.onload = function(){
+      if (window.api && window.api.setOverlaySize && dungeonImage.naturalWidth && dungeonImage.naturalHeight) {
+        window.api.setOverlaySize(dungeonImage.naturalWidth, dungeonImage.naturalHeight);
+      }
+    };
     dungeonImage.src = `dungeons/${name}.jpg`;
     scale = 0.8; x = 40; y = 40;
     applyTransform();

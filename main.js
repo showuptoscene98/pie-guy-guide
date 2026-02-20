@@ -154,9 +154,15 @@ function startAnchoredToGame(win) {
   } catch (_) {}
 }
 
+const OVERLAY_TITLEBAR_H = 64;
+const OVERLAY_MIN_W = 320;
+const OVERLAY_MIN_H = 240;
+const OVERLAY_DEFAULT_W = 640;
+const OVERLAY_DEFAULT_H = 480;
+
 function createOverlayWindow(file) {
-  const width = 1100;
-  const height = 760;
+  const width = OVERLAY_DEFAULT_W;
+  const height = OVERLAY_DEFAULT_H + OVERLAY_TITLEBAR_H;
   let x, y;
   try {
     const primary = screen.getPrimaryDisplay();
@@ -170,8 +176,8 @@ function createOverlayWindow(file) {
   const win = new BrowserWindow({
     width,
     height,
-    minWidth: 900,
-    minHeight: 620,
+    minWidth: OVERLAY_MIN_W,
+    minHeight: OVERLAY_MIN_H + OVERLAY_TITLEBAR_H,
     x,
     y,
     frame: false,
@@ -287,6 +293,8 @@ function setupAutoUpdater() {
 
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.allowPrerelease = false;
+  autoUpdater.channel = "latest";
 
   const sendStatus = (channel, ...args) => {
     if (mainWindow && !mainWindow.isDestroyed()) {
@@ -412,6 +420,28 @@ ipcMain.on("overlay:openDungeon", () => {
 ipcMain.on("overlay:close", (event) => {
   const win = BrowserWindow.fromWebContents(event.sender);
   win?.close();
+});
+
+ipcMain.on("overlay:setSize", (event, contentWidth, contentHeight) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (!win || win.isDestroyed()) return;
+  let maxW = 1920, maxH = 1200;
+  try {
+    const work = screen.getPrimaryDisplay().workArea ?? screen.getPrimaryDisplay().bounds;
+    maxW = work.width;
+    maxH = work.height;
+  } catch (_) {}
+  const w = Math.max(OVERLAY_MIN_W, Math.min(Math.round(Number(contentWidth) || OVERLAY_DEFAULT_W), maxW));
+  const h = Math.max(OVERLAY_MIN_H + OVERLAY_TITLEBAR_H, Math.min(Math.round(Number(contentHeight) || OVERLAY_DEFAULT_H) + OVERLAY_TITLEBAR_H, maxH));
+  win.setSize(w, h);
+  positionOverlayTopRight(win);
+});
+
+ipcMain.on("overlay:setOpacity", (event, value) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (!win || win.isDestroyed()) return;
+  const opacity = Math.min(1, Math.max(0.2, Number(value)));
+  win.setOpacity(opacity);
 });
 
 function setOverlayClickthrough(win, enabled) {

@@ -113,8 +113,9 @@ function setupUpdaterUI() {
     if (checkBtn) checkBtn.disabled = false;
   });
   window.api.onUpdaterUpdateNotAvailable(() => {
-    hideBanner();
+    showBanner("You're on the latest version.", false);
     if (checkBtn) checkBtn.disabled = false;
+    setTimeout(hideBanner, 3000);
   });
   window.api.onUpdaterUpdateDownloaded(() => {
     showBanner("Update ready. Restart the app to install.", true);

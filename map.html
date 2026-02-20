@@ -30,31 +30,122 @@
     gap:10px;
   }
 
-  .buttons {
-    display:flex;
-    flex-wrap:wrap;
-    gap:6px;
-    margin-top:6px;
+  .map-layout {
+    display: flex;
+    height: calc(100vh - 64px);
     -webkit-app-region: no-drag;
   }
 
-  .btn {
-    padding:4px 8px;
-    font-size:11px;
-    border-radius:8px;
-    border:1px solid rgba(255,255,255,0.2);
-    background:#222;
-    color:#fff;
-    cursor:pointer;
+  .map-sidebar {
+    width: 160px;
+    flex-shrink: 0;
+    background: #0a0a0a;
+    border-right: 1px solid rgba(255,255,255,0.08);
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
   }
-  .btn:hover { background:#333; }
+
+  .map-sidebar label {
+    font-size: 11px;
+    color: rgba(255,255,255,0.8);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .map-sidebar select {
+    width: 100%;
+    padding: 6px 8px;
+    font-size: 12px;
+    background: #222;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    color: #fff;
+    cursor: pointer;
+  }
+
+  .map-sidebar select:focus {
+    outline: none;
+    border-color: rgba(255,204,77,0.5);
+  }
+
+  .map-opacity-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .map-opacity-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .map-opacity-value {
+    font-size: 11px;
+    color: rgba(255,255,255,0.7);
+    min-width: 32px;
+    text-align: right;
+  }
+
+  .map-opacity-slider {
+    width: 100%;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: rgba(255,255,255,0.15);
+    border-radius: 3px;
+  }
+
+  .map-opacity-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #ffcc4d;
+    cursor: pointer;
+    border: none;
+  }
+
+  .map-opacity-slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #ffcc4d;
+    cursor: pointer;
+    border: none;
+  }
+
+  .btn {
+    padding: 4px 8px;
+    font-size: 11px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: #222;
+    color: #fff;
+    cursor: pointer;
+  }
+  .btn:hover { background: #333; }
+
+  .stage-wrap {
+    flex: 1;
+    min-width: 0;
+    position: relative;
+  }
 
   .stage {
-    width:100vw;
-    height:calc(100vh - 64px);
+    width: 100%;
+    height: 100%;
     overflow:hidden;
-    position:relative;
-    touch-action:none; /* IMPORTANT: stops browser gestures from interfering */
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+    touch-action: none;
     background:
       radial-gradient(800px 500px at 20% 10%, rgba(255,204,77,0.08), transparent 55%),
       radial-gradient(800px 500px at 80% 20%, rgba(90,120,255,0.10), transparent 60%),
@@ -111,12 +202,28 @@
     </div>
     <button class="btn" style="-webkit-app-region:no-drag;" onclick="window.api.closeOverlay()">Close</button>
   </div>
-  <div class="buttons" id="mapButtons"></div>
 </div>
 
-<div class="stage" id="stage">
-  <div class="canvas" id="canvas">
-    <img id="mapImage" src="" draggable="false" alt="Map" />
+<div class="map-layout">
+  <aside class="map-sidebar">
+    <div>
+      <label for="mapSelect">Map</label>
+      <select id="mapSelect" aria-label="Select map"></select>
+    </div>
+    <div class="map-opacity-wrap">
+      <label for="mapOpacitySlider">Opacity</label>
+      <div class="map-opacity-row">
+        <input type="range" id="mapOpacitySlider" class="map-opacity-slider" min="30" max="100" value="100" />
+        <span class="map-opacity-value" id="mapOpacityValue">100%</span>
+      </div>
+    </div>
+  </aside>
+  <div class="stage-wrap">
+    <div class="stage" id="stage">
+      <div class="canvas" id="canvas">
+        <img id="mapImage" src="" draggable="false" alt="Map" />
+      </div>
+    </div>
   </div>
 </div>
 
@@ -164,10 +271,12 @@
     "Sun Vale"
   ];
 
-  const mapButtons = document.getElementById("mapButtons");
+  const mapSelect = document.getElementById("mapSelect");
   const mapImage = document.getElementById("mapImage");
   const stage = document.getElementById("stage");
   const canvas = document.getElementById("canvas");
+  const mapOpacitySlider = document.getElementById("mapOpacitySlider");
+  const mapOpacityValue = document.getElementById("mapOpacityValue");
 
   let scale = 0.8;
   let x = 40;
@@ -177,24 +286,40 @@
     canvas.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
   }
 
+  const MAP_SIDEBAR_WIDTH = 160;
+
   function loadMap(name){
+    mapImage.onload = function(){
+      if (window.api && window.api.setOverlaySize && mapImage.naturalWidth && mapImage.naturalHeight) {
+        window.api.setOverlaySize(MAP_SIDEBAR_WIDTH + mapImage.naturalWidth, mapImage.naturalHeight);
+      }
+    };
     mapImage.src = `maps/${name}.jpg`;
-    // Reset view on load
     scale = 0.8; x = 40; y = 40;
     applyTransform();
   }
 
-  // Build map buttons
+  // Populate dropdown
   maps.forEach((name) => {
-    const btn = document.createElement("button");
-    btn.className = "btn";
-    btn.textContent = name;
-    btn.addEventListener("click", () => loadMap(name));
-    mapButtons.appendChild(btn);
+    const opt = document.createElement("option");
+    opt.value = name;
+    opt.textContent = name;
+    mapSelect.appendChild(opt);
   });
 
-  // Load first map
+  mapSelect.addEventListener("change", () => loadMap(mapSelect.value));
+
+  // Opacity slider
+  if (mapOpacitySlider && window.api && window.api.setOverlayOpacity) {
+    mapOpacitySlider.addEventListener("input", () => {
+      const pct = mapOpacitySlider.value;
+      if (mapOpacityValue) mapOpacityValue.textContent = pct + "%";
+      window.api.setOverlayOpacity(Number(pct) / 100);
+    });
+  }
+
   loadMap(maps[0]);
+  mapSelect.value = maps[0];
 
   // ===== PAN (pointer events = reliable) =====
   let dragging = false;

@@ -10,6 +10,8 @@ contextBridge.exposeInMainWorld("api", {
   openMap: () => ipcRenderer.send("overlay:openMap"),
   openDungeon: () => ipcRenderer.send("overlay:openDungeon"),
   closeOverlay: () => ipcRenderer.send("overlay:close"),
+  setOverlaySize: (width, height) => ipcRenderer.send("overlay:setSize", width, height),
+  setOverlayOpacity: (value) => ipcRenderer.send("overlay:setOpacity", value),
   setOverlayClickthrough: (enabled) => ipcRenderer.send("overlay:setClickthrough", enabled),
   onOverlayClickthroughState: (cb) => ipcRenderer.on("overlay:clickthroughState", (e, value) => cb(value)),
 
