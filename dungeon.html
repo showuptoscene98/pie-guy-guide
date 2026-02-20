@@ -30,31 +30,121 @@
     gap:10px;
   }
 
-  .buttons {
-    display:flex;
-    flex-wrap:wrap;
-    gap:6px;
-    margin-top:6px;
+  .dungeon-layout {
+    display: flex;
+    height: calc(100vh - 64px);
     -webkit-app-region: no-drag;
   }
 
-  .btn {
-    padding:4px 8px;
-    font-size:11px;
-    border-radius:8px;
-    border:1px solid rgba(255,255,255,0.2);
-    background:#222;
-    color:#fff;
-    cursor:pointer;
+  .dungeon-sidebar {
+    width: 160px;
+    flex-shrink: 0;
+    background: #0a0a0a;
+    border-right: 1px solid rgba(255,255,255,0.08);
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
   }
-  .btn:hover { background:#333; }
+
+  .dungeon-sidebar label {
+    font-size: 11px;
+    color: rgba(255,255,255,0.8);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .dungeon-sidebar select {
+    width: 100%;
+    padding: 6px 8px;
+    font-size: 12px;
+    background: #222;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    color: #fff;
+    cursor: pointer;
+  }
+
+  .dungeon-sidebar select:focus {
+    outline: none;
+    border-color: rgba(255,204,77,0.5);
+  }
+
+  .dungeon-opacity-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .dungeon-opacity-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .dungeon-opacity-value {
+    font-size: 11px;
+    color: rgba(255,255,255,0.7);
+    min-width: 32px;
+    text-align: right;
+  }
+
+  .dungeon-opacity-slider {
+    width: 100%;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: rgba(255,255,255,0.15);
+    border-radius: 3px;
+  }
+
+  .dungeon-opacity-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #ffcc4d;
+    cursor: pointer;
+    border: none;
+  }
+
+  .dungeon-opacity-slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #ffcc4d;
+    cursor: pointer;
+    border: none;
+  }
+
+  .btn {
+    padding: 4px 8px;
+    font-size: 11px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: #222;
+    color: #fff;
+    cursor: pointer;
+  }
+  .btn:hover { background: #333; }
+
+  .stage-wrap {
+    flex: 1;
+    min-width: 0;
+    position: relative;
+  }
 
   .stage {
-    width:100vw;
-    height:calc(100vh - 64px);
-    overflow:hidden;
-    position:relative;
-    touch-action:none;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+    touch-action: none;
     background:
       radial-gradient(800px 500px at 20% 10%, rgba(255,204,77,0.08), transparent 55%),
       radial-gradient(800px 500px at 80% 20%, rgba(90,120,255,0.10), transparent 60%),
@@ -111,12 +201,28 @@
     </div>
     <button class="btn" style="-webkit-app-region:no-drag;" onclick="window.api.closeOverlay()">Close</button>
   </div>
-  <div class="buttons" id="dungeonButtons"></div>
 </div>
 
-<div class="stage" id="stage">
-  <div class="canvas" id="canvas">
-    <img id="dungeonImage" src="" draggable="false" alt="Dungeon" />
+<div class="dungeon-layout">
+  <aside class="dungeon-sidebar">
+    <div>
+      <label for="dungeonSelect">Dungeon</label>
+      <select id="dungeonSelect" aria-label="Select dungeon"></select>
+    </div>
+    <div class="dungeon-opacity-wrap">
+      <label for="dungeonOpacitySlider">Opacity</label>
+      <div class="dungeon-opacity-row">
+        <input type="range" id="dungeonOpacitySlider" class="dungeon-opacity-slider" min="30" max="100" value="100" />
+        <span class="dungeon-opacity-value" id="dungeonOpacityValue">100%</span>
+      </div>
+    </div>
+  </aside>
+  <div class="stage-wrap">
+    <div class="stage" id="stage">
+      <div class="canvas" id="canvas">
+        <img id="dungeonImage" src="" draggable="false" alt="Dungeon" />
+      </div>
+    </div>
   </div>
 </div>
 
@@ -147,22 +253,25 @@
     });
   }
 
- const dungeons = [
-  "Goblin Dungeon Lower",
-  "Goblin Dungeon Upper",
-  "Kur Tower",
-  "Rahu Sewer",
-  "Serbule Crypt",
-  "Wolf Cave",
-  "Yeti Cave",
-  "Myconian Cave"
-];
+  const dungeons = [
+    "Goblin Dungeon Lower",
+    "Goblin Dungeon Upper",
+    "Kur Tower",
+    "Rahu Sewer",
+    "Serbule Crypt",
+    "Wolf Cave",
+    "Yeti Cave",
+    "Myconian Cave"
+  ];
 
+  const DUNGEON_SIDEBAR_WIDTH = 160;
 
-  const dungeonButtons = document.getElementById("dungeonButtons");
+  const dungeonSelect = document.getElementById("dungeonSelect");
   const dungeonImage = document.getElementById("dungeonImage");
   const stage = document.getElementById("stage");
   const canvas = document.getElementById("canvas");
+  const dungeonOpacitySlider = document.getElementById("dungeonOpacitySlider");
+  const dungeonOpacityValue = document.getElementById("dungeonOpacityValue");
 
   let scale = 0.8;
   let x = 40;
@@ -175,7 +284,7 @@
   function loadDungeon(name){
     dungeonImage.onload = function(){
       if (window.api && window.api.setOverlaySize && dungeonImage.naturalWidth && dungeonImage.naturalHeight) {
-        window.api.setOverlaySize(dungeonImage.naturalWidth, dungeonImage.naturalHeight);
+        window.api.setOverlaySize(DUNGEON_SIDEBAR_WIDTH + dungeonImage.naturalWidth, dungeonImage.naturalHeight);
       }
     };
     dungeonImage.src = `dungeons/${name}.jpg`;
@@ -184,14 +293,24 @@
   }
 
   dungeons.forEach((name) => {
-    const btn = document.createElement("button");
-    btn.className = "btn";
-    btn.textContent = name;
-    btn.addEventListener("click", () => loadDungeon(name));
-    dungeonButtons.appendChild(btn);
+    const opt = document.createElement("option");
+    opt.value = name;
+    opt.textContent = name;
+    dungeonSelect.appendChild(opt);
   });
 
+  dungeonSelect.addEventListener("change", () => loadDungeon(dungeonSelect.value));
+
+  if (dungeonOpacitySlider && window.api && window.api.setOverlayOpacity) {
+    dungeonOpacitySlider.addEventListener("input", () => {
+      const pct = dungeonOpacitySlider.value;
+      if (dungeonOpacityValue) dungeonOpacityValue.textContent = pct + "%";
+      window.api.setOverlayOpacity(Number(pct) / 100);
+    });
+  }
+
   loadDungeon(dungeons[0]);
+  dungeonSelect.value = dungeons[0];
 
   // Pan
   let dragging = false;

@@ -21,6 +21,16 @@
       </div>
 
       <div class="topbar-controls">
+        <div class="options-wrap">
+          <button type="button" class="topbtn topbtn-options" id="optionsCogBtn" title="Options" aria-label="Options">⚙</button>
+          <div class="options-dropdown hidden" id="optionsDropdown">
+            <div class="options-dropdown-title">Options</div>
+            <label class="options-dropdown-item">
+              <input type="checkbox" id="optionAnchorOverlays" checked />
+              <span>Anchor map & dungeon to top right</span>
+            </label>
+          </div>
+        </div>
         <button type="button" class="topbtn" onclick="window.api?.mainMinimize?.()">—</button>
         <button type="button" class="topbtn danger" onclick="window.api?.mainClose?.()">✕</button>
       </div>
@@ -200,7 +210,7 @@
           </div>
           <div class="aboutBox">
             <p class="aboutText">Come Join us in the multi-game family that has grown over the years!</p>
-            <a class="discord" href="https://discord.com/invite/NAH5bejC2g" target="_blank">Join Our Discord</a>
+            <a class="discord" href="https://discord.gg/sRDMFWk9" target="_blank">Join Our Discord</a>
             <div class="aboutUpdates">
               <span class="aboutVersion" id="appVersion">v —</span>
               <button type="button" class="primary aboutCheckBtn" id="checkUpdatesBtn">Check for updates</button>

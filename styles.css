@@ -148,9 +148,68 @@ body{
 
 .topbar-controls{
   display:flex;
+  align-items:center;
   gap:8px;
   -webkit-app-region:no-drag;
   pointer-events:auto;
+}
+
+.options-wrap{
+  position:relative;
+}
+
+.topbtn-options{
+  font-size:16px;
+  line-height:1;
+}
+
+.options-dropdown{
+  position:absolute;
+  top:100%;
+  right:0;
+  margin-top:6px;
+  min-width:220px;
+  padding:10px 0;
+  background:#1a1a1a;
+  border:1px solid var(--border);
+  border-radius:12px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.5);
+  z-index:200;
+}
+
+.options-dropdown.hidden{
+  display:none;
+}
+
+.options-dropdown-title{
+  padding:6px 14px 8px;
+  font-size:11px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:0.05em;
+  color:var(--muted);
+}
+
+.options-dropdown-item{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:8px 14px;
+  font-size:13px;
+  color:var(--text);
+  cursor:pointer;
+  user-select:none;
+}
+
+.options-dropdown-item:hover{
+  background:rgba(255,255,255,0.06);
+}
+
+.options-dropdown-item input[type="checkbox"]{
+  width:16px;
+  height:16px;
+  accent-color:var(--gold);
+  cursor:pointer;
 }
 
 .topbtn{

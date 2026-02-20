@@ -57,7 +57,45 @@ function setupOpacitySlider() {
   slider.addEventListener("input", () => applyOpacity(slider.value));
 }
 
+function setupOptionsUI() {
+  const cogBtn = document.getElementById("optionsCogBtn");
+  const dropdown = document.getElementById("optionsDropdown");
+  const anchorCheck = document.getElementById("optionAnchorOverlays");
+  if (!cogBtn || !dropdown || !anchorCheck || !window.api) return;
+
+  function openDropdown() {
+    dropdown.classList.remove("hidden");
+    window.api.getOverlayAnchorPreference().then((v) => {
+      anchorCheck.checked = !!v;
+    });
+  }
+
+  function closeDropdown() {
+    dropdown.classList.add("hidden");
+  }
+
+  cogBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (dropdown.classList.contains("hidden")) openDropdown();
+    else closeDropdown();
+  });
+
+  anchorCheck.addEventListener("change", () => {
+    window.api.setOverlayAnchorPreference(anchorCheck.checked);
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!dropdown.classList.contains("hidden") && !e.target.closest(".options-wrap")) closeDropdown();
+  });
+
+  window.api.getOverlayAnchorPreference().then((v) => {
+    anchorCheck.checked = !!v;
+  });
+}
+
 setupOpacitySlider();
+setupOptionsUI();
+
 // Leveling accordion: only one bracket open at a time
 function setupLevelingAccordion() {
   const container = document.querySelector("#page-leveling .leveling");

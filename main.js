@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain, globalShortcut, Tray, nativeImage, Menu, screen } = require("electron");
 const path = require("path");
+const fs = require("fs");
 const https = require("https");
 const { autoUpdater } = require("electron-updater");
 
@@ -82,6 +83,23 @@ let mapClickthrough = false;
 let dungeonClickthrough = false;
 let wikiWindow = null;
 let currentOpacity = 1;
+let overlayAnchorTopRight = true;
+
+const PREFERENCES_PATH = path.join(app.getPath("userData"), "preferences.json");
+
+function loadPreferences() {
+  try {
+    const raw = fs.readFileSync(PREFERENCES_PATH, "utf8");
+    const prefs = JSON.parse(raw);
+    if (typeof prefs.overlayAnchorTopRight === "boolean") overlayAnchorTopRight = prefs.overlayAnchorTopRight;
+  } catch (_) {}
+}
+
+function savePreferences() {
+  try {
+    fs.writeFileSync(PREFERENCES_PATH, JSON.stringify({ overlayAnchorTopRight }), "utf8");
+  } catch (_) {}
+}
 
 function isGameWindow(w) {
   if (!w || typeof w.getTitle !== "function" || typeof w.getBounds !== "function") return false;
@@ -163,23 +181,11 @@ const OVERLAY_DEFAULT_H = 480;
 function createOverlayWindow(file) {
   const width = OVERLAY_DEFAULT_W;
   const height = OVERLAY_DEFAULT_H + OVERLAY_TITLEBAR_H;
-  let x, y;
-  try {
-    const primary = screen.getPrimaryDisplay();
-    const work = primary.workArea ?? primary.bounds;
-    x = Math.round(work.x + work.width - width - ANCHOR_OFFSET_PX);
-    y = Math.round(work.y + ANCHOR_OFFSET_PX);
-  } catch (_) {
-    x = 0;
-    y = 0;
-  }
-  const win = new BrowserWindow({
+  const opts = {
     width,
     height,
     minWidth: OVERLAY_MIN_W,
     minHeight: OVERLAY_MIN_H + OVERLAY_TITLEBAR_H,
-    x,
-    y,
     frame: false,
     thickFrame: false,
     show: true,
@@ -190,14 +196,30 @@ function createOverlayWindow(file) {
       contextIsolation: true,
       nodeIntegration: false
     }
-  });
+  };
+  if (overlayAnchorTopRight) {
+    try {
+      const primary = screen.getPrimaryDisplay();
+      const work = primary.workArea ?? primary.bounds;
+      opts.x = Math.round(work.x + work.width - width - ANCHOR_OFFSET_PX);
+      opts.y = Math.round(work.y + ANCHOR_OFFSET_PX);
+    } catch (_) {
+      opts.x = 0;
+      opts.y = 0;
+    }
+  } else {
+    opts.center = true;
+  }
+  const win = new BrowserWindow(opts);
 
   win.setAlwaysOnTop(true, "screen-saver");
 
-  if (windowManager) {
-    startAnchoredToGame(win);
-  } else {
-    win.once("show", () => positionOverlayTopRight(win));
+  if (overlayAnchorTopRight) {
+    if (windowManager) {
+      startAnchoredToGame(win);
+    } else {
+      win.once("show", () => positionOverlayTopRight(win));
+    }
   }
   const filePath = path.isAbsolute(file) ? file : path.join(__dirname, file);
   win.setOpacity(currentOpacity);
@@ -293,7 +315,8 @@ function setupAutoUpdater() {
 
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
-  autoUpdater.allowPrerelease = false;
+  // Allow pre-release so updates show even if a release is marked Pre-release on GitHub (GitHub /releases/latest ignores those)
+  autoUpdater.allowPrerelease = true;
   autoUpdater.channel = "latest";
 
   const sendStatus = (channel, ...args) => {
@@ -307,13 +330,17 @@ function setupAutoUpdater() {
   autoUpdater.on("update-not-available", (info) => sendStatus("updater:update-not-available", info));
   autoUpdater.on("download-progress", (progress) => sendStatus("updater:download-progress", progress));
   autoUpdater.on("update-downloaded", (info) => sendStatus("updater:update-downloaded", info));
-  autoUpdater.on("error", (err) => sendStatus("updater:error", err.message || String(err)));
+  autoUpdater.on("error", (err) => {
+    console.error("[updater]", err.message || err);
+    sendStatus("updater:error", err.message || String(err));
+  });
 
   // Auto-check shortly after app ready
   setTimeout(() => autoUpdater.checkForUpdates(), 3000);
 }
 
 app.whenReady().then(() => {
+  loadPreferences();
   createMainWindow();
   setupAutoUpdater();
 
@@ -434,7 +461,7 @@ ipcMain.on("overlay:setSize", (event, contentWidth, contentHeight) => {
   const w = Math.max(OVERLAY_MIN_W, Math.min(Math.round(Number(contentWidth) || OVERLAY_DEFAULT_W), maxW));
   const h = Math.max(OVERLAY_MIN_H + OVERLAY_TITLEBAR_H, Math.min(Math.round(Number(contentHeight) || OVERLAY_DEFAULT_H) + OVERLAY_TITLEBAR_H, maxH));
   win.setSize(w, h);
-  positionOverlayTopRight(win);
+  if (overlayAnchorTopRight) positionOverlayTopRight(win);
 });
 
 ipcMain.on("overlay:setOpacity", (event, value) => {
@@ -449,6 +476,12 @@ function setOverlayClickthrough(win, enabled) {
   win.setIgnoreMouseEvents(enabled, { forward: true });
   win.webContents.send("overlay:clickthroughState", enabled);
 }
+
+ipcMain.handle("overlay:getAnchorPreference", () => overlayAnchorTopRight);
+ipcMain.on("overlay:setAnchorPreference", (event, value) => {
+  overlayAnchorTopRight = !!value;
+  savePreferences();
+});
 
 ipcMain.on("overlay:setClickthrough", (event, enabled) => {
   const win = BrowserWindow.fromWebContents(event.sender);

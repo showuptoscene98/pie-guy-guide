@@ -14,6 +14,8 @@ contextBridge.exposeInMainWorld("api", {
   setOverlayOpacity: (value) => ipcRenderer.send("overlay:setOpacity", value),
   setOverlayClickthrough: (enabled) => ipcRenderer.send("overlay:setClickthrough", enabled),
   onOverlayClickthroughState: (cb) => ipcRenderer.on("overlay:clickthroughState", (e, value) => cb(value)),
+  getOverlayAnchorPreference: () => ipcRenderer.invoke("overlay:getAnchorPreference"),
+  setOverlayAnchorPreference: (value) => ipcRenderer.send("overlay:setAnchorPreference", value),
 
   // Updater
   checkForUpdates: () => ipcRenderer.send("updater:check"),
