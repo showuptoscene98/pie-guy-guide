@@ -215,6 +215,8 @@ function createMainWindow() {
     }
   });
 
+  mainWindow.setAlwaysOnTop(true, "screen-saver");
+
   mainWindow.loadFile("index.html");
   mainWindow.on("closed", () => {
     if (appTray && !appTray.isDestroyed()) {
