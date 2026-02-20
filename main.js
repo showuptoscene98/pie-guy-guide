@@ -319,6 +319,14 @@ function setupAutoUpdater() {
   autoUpdater.autoInstallOnAppQuit = true;
   autoUpdater.allowPrerelease = false;
   autoUpdater.channel = "latest";
+  // Explicit GitHub release feed so updater finds published releases (avoids "No published versions")
+  try {
+    autoUpdater.setFeedURL({
+      provider: "github",
+      owner: "showuptoscene98",
+      repo: "pie-guy-guide"
+    });
+  } catch (_) {}
 
   const sendStatus = (channel, ...args) => {
     if (mainWindow && !mainWindow.isDestroyed()) {
@@ -339,7 +347,11 @@ function setupAutoUpdater() {
   autoUpdater.on("update-downloaded", (info) => sendStatus("updater:update-downloaded", info));
   autoUpdater.on("error", (err) => {
     console.error("[updater]", err.message || err);
-    sendStatus("updater:error", err.message || String(err));
+    let msg = err.message || String(err);
+    if (msg.includes("No published versions") || msg.includes("Could not find updates")) {
+      msg = "No updates found. Ensure a Release is published at GitHub for this app.";
+    }
+    sendStatus("updater:error", msg);
   });
 
   // Auto-check shortly after app ready, then every 4 hours
