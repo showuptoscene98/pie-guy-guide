@@ -81,6 +81,7 @@ let dungeonWindow = null;
 let mapClickthrough = false;
 let dungeonClickthrough = false;
 let wikiWindow = null;
+let currentOpacity = 1;
 
 function isGameWindow(w) {
   if (!w || typeof w.getTitle !== "function" || typeof w.getBounds !== "function") return false;
@@ -193,6 +194,8 @@ function createOverlayWindow(file) {
     win.once("show", () => positionOverlayTopRight(win));
   }
   const filePath = path.isAbsolute(file) ? file : path.join(__dirname, file);
+  win.setOpacity(currentOpacity);
+
   win.loadFile(filePath).catch(() => {}).finally(() => {
     if (!win.isDestroyed()) {
       win.show();
@@ -348,7 +351,10 @@ ipcMain.on("main:minimize", () => {
 });
 ipcMain.on("main:setOpacity", (event, value) => {
   const opacity = Math.min(1, Math.max(0.2, Number(value)));
+  currentOpacity = opacity;
   if (mainWindow && !mainWindow.isDestroyed()) mainWindow.setOpacity(opacity);
+  if (mapWindow && !mapWindow.isDestroyed()) mapWindow.setOpacity(opacity);
+  if (dungeonWindow && !dungeonWindow.isDestroyed()) dungeonWindow.setOpacity(opacity);
 });
 ipcMain.on("main:close", () => {
   if (mainWindow && !mainWindow.isDestroyed()) {
