@@ -41,8 +41,9 @@ function parsePgNews(raw) {
     if (!trimmed) continue;
     const firstNewline = trimmed.indexOf("\n");
     const dateLine = firstNewline === -1 ? trimmed : trimmed.slice(0, firstNewline);
-    const body = firstNewline === -1 ? "" : trimmed.slice(firstNewline + 1).trim();
-    const date = dateLine.replace(/\s+/g, " ").trim();
+    let body = firstNewline === -1 ? "" : trimmed.slice(firstNewline + 1).trim();
+    body = body.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    const date = dateLine.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
     if (date && date.length < 80) updates.push({ date, body });
   }
   return updates.slice(0, PG_NEWS_MAX_ITEMS);
@@ -63,6 +64,7 @@ const ANCHOR_POLL_MS = 400;
 let mainWindow = null;
 let mapWindow = null;
 let dungeonWindow = null;
+let wikiWindow = null;
 
 function isGameWindow(w) {
   if (!w || typeof w.getTitle !== "function" || typeof w.getBounds !== "function") return false;
@@ -91,25 +93,33 @@ function getGameWindowBounds() {
 }
 
 function startAnchoredToGame(win) {
-  const apply = () => {
-    if (win.isDestroyed()) return;
-    const game = getGameWindowBounds();
-    const [w, h] = win.getSize();
-    if (game) {
-      const x = Math.round(game.x + game.width - w - ANCHOR_OFFSET_PX);
-      const y = Math.round(game.y + ANCHOR_OFFSET_PX);
-      win.setPosition(x, y);
-    }
-  };
+  try {
+    const apply = () => {
+      if (win.isDestroyed()) return;
+      try {
+        const game = getGameWindowBounds();
+        const [w, h] = win.getSize();
+        if (game) {
+          const x = Math.round(game.x + game.width - w - ANCHOR_OFFSET_PX);
+          const y = Math.round(game.y + ANCHOR_OFFSET_PX);
+          win.setPosition(x, y);
+        }
+      } catch (_) {}
+    };
 
-  win.once("show", () => {
-    apply();
-    if (!getGameWindowBounds()) win.center();
-    win._anchorInterval = setInterval(apply, ANCHOR_POLL_MS);
-  });
-  win.on("closed", () => {
-    if (win._anchorInterval) clearInterval(win._anchorInterval);
-  });
+    win.once("show", () => {
+      try {
+        apply();
+        if (!getGameWindowBounds()) win.center();
+        win._anchorInterval = setInterval(apply, ANCHOR_POLL_MS);
+      } catch (_) {
+        win.center();
+      }
+    });
+    win.on("closed", () => {
+      if (win._anchorInterval) clearInterval(win._anchorInterval);
+    });
+  } catch (_) {}
 }
 
 function createOverlayWindow(file) {
@@ -119,9 +129,10 @@ function createOverlayWindow(file) {
     minWidth: 900,
     minHeight: 620,
     frame: false,
+    show: true,
     backgroundColor: "#111111",
     alwaysOnTop: true,
-    center: !windowManager,
+    center: true,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
@@ -130,7 +141,13 @@ function createOverlayWindow(file) {
   });
 
   if (windowManager) startAnchoredToGame(win);
-  win.loadFile(file);
+  const filePath = path.isAbsolute(file) ? file : path.join(__dirname, file);
+  win.loadFile(filePath).catch(() => {}).finally(() => {
+    if (!win.isDestroyed()) {
+      win.show();
+      win.focus();
+    }
+  });
   return win;
 }
 
@@ -150,6 +167,9 @@ function createMainWindow() {
   });
 
   mainWindow.loadFile("index.html");
+  mainWindow.on("closed", () => {
+    mainWindow = null;
+  });
 }
 
 function restoreMainIfMinimized() {
@@ -203,41 +223,57 @@ app.on("window-all-closed", () => {
 });
 
 // Main controls
-ipcMain.on("main:minimize", () => mainWindow?.minimize());
-ipcMain.on("main:close", () => mainWindow?.close());
+ipcMain.on("main:minimize", () => {
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.minimize();
+});
+ipcMain.on("main:close", () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.close();
+  } else {
+    app.quit();
+  }
+});
 
 // Map overlay: minimize main until map closes
 ipcMain.on("overlay:openMap", () => {
-  if (mapWindow) {
-    mapWindow.show();
-    mapWindow.focus();
-    return;
+  try {
+    if (mapWindow && !mapWindow.isDestroyed()) {
+      mapWindow.show();
+      mapWindow.focus();
+      return;
+    }
+
+    if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isMinimized()) mainWindow.minimize();
+
+    mapWindow = createOverlayWindow("map.html");
+    mapWindow.on("closed", () => {
+      mapWindow = null;
+      restoreMainIfMinimized();
+    });
+  } catch (e) {
+    console.error("overlay:openMap", e);
   }
-
-  if (mainWindow && !mainWindow.isMinimized()) mainWindow.minimize();
-
-  mapWindow = createOverlayWindow("map.html");
-  mapWindow.on("closed", () => {
-    mapWindow = null;
-    restoreMainIfMinimized();
-  });
 });
 
 // Dungeon overlay: same behavior
 ipcMain.on("overlay:openDungeon", () => {
-  if (dungeonWindow) {
-    dungeonWindow.show();
-    dungeonWindow.focus();
-    return;
+  try {
+    if (dungeonWindow && !dungeonWindow.isDestroyed()) {
+      dungeonWindow.show();
+      dungeonWindow.focus();
+      return;
+    }
+
+    if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isMinimized()) mainWindow.minimize();
+
+    dungeonWindow = createOverlayWindow("dungeon.html");
+    dungeonWindow.on("closed", () => {
+      dungeonWindow = null;
+      restoreMainIfMinimized();
+    });
+  } catch (e) {
+    console.error("overlay:openDungeon", e);
   }
-
-  if (mainWindow && !mainWindow.isMinimized()) mainWindow.minimize();
-
-  dungeonWindow = createOverlayWindow("dungeon.html");
-  dungeonWindow.on("closed", () => {
-    dungeonWindow = null;
-    restoreMainIfMinimized();
-  });
 });
 
 // Close overlay (ESC)
@@ -251,9 +287,101 @@ ipcMain.on("updater:check", () => {
   if (app.isPackaged && autoUpdater) autoUpdater.checkForUpdates();
 });
 ipcMain.on("updater:quitAndInstall", () => {
-  autoUpdater.quitAndInstall(false, true);
+  if (app.isPackaged) {
+    try {
+      autoUpdater.quitAndInstall(false, true);
+    } catch (_) {
+      app.quit();
+    }
+  } else {
+    app.quit();
+  }
 });
 ipcMain.handle("updater:getVersion", () => app.getVersion());
 
 // Project Gorgon news (Home screen)
 ipcMain.handle("pg-news:fetch", () => fetchProjectGorgonNews());
+
+// Project Gorgon Wiki search (MediaWiki API)
+const WIKI_API = "https://wiki.projectgorgon.com/w/api.php";
+const WIKI_BASE = "https://wiki.projectgorgon.com/wiki/";
+
+function fetchWikiSearch(query) {
+  return new Promise((resolve) => {
+    const trimmed = (query || "").trim();
+    if (!trimmed) {
+      resolve({ results: [], error: null });
+      return;
+    }
+    const params = new URLSearchParams({
+      action: "query",
+      list: "search",
+      srsearch: trimmed,
+      srlimit: "10",
+      format: "json",
+      origin: "*"
+    });
+    const url = `${WIKI_API}?${params.toString()}`;
+    const req = https.get(url, { timeout: 10000 }, (res) => {
+      if (res.statusCode !== 200) {
+        resolve({ results: [], error: "Search failed" });
+        return;
+      }
+      const chunks = [];
+      res.on("data", (c) => chunks.push(c));
+      res.on("end", () => {
+        try {
+          const raw = Buffer.concat(chunks).toString("utf8");
+          const data = JSON.parse(raw);
+          const list = (data.query && data.query.search) || [];
+          const results = list.map((item) => ({
+            title: item.title,
+            snippet: (item.snippet || "").replace(/<[^>]+>/g, ""),
+            url: WIKI_BASE + encodeURIComponent(String(item.title).replace(/ /g, "_"))
+          }));
+          resolve({ results, error: null });
+        } catch (e) {
+          resolve({ results: [], error: e.message || "Parse error" });
+        }
+      });
+    });
+    req.on("error", (e) => resolve({ results: [], error: e.message || "Network error" }));
+    req.on("timeout", () => {
+      req.destroy();
+      resolve({ results: [], error: "Request timed out" });
+    });
+  });
+}
+
+ipcMain.handle("wiki:search", (event, query) => fetchWikiSearch(query));
+
+function createOrShowWikiWindow(url) {
+  if (wikiWindow && !wikiWindow.isDestroyed()) {
+    wikiWindow.loadURL(url);
+    wikiWindow.show();
+    wikiWindow.focus();
+    return;
+  }
+  wikiWindow = new BrowserWindow({
+    width: 960,
+    height: 700,
+    minWidth: 640,
+    minHeight: 480,
+    title: "Project Gorgon Wiki",
+    backgroundColor: "#1a1a1a",
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true
+    }
+  });
+  wikiWindow.loadURL(url);
+  wikiWindow.on("closed", () => {
+    wikiWindow = null;
+  });
+}
+
+ipcMain.on("wiki:open", (event, url) => {
+  if (url && typeof url === "string" && url.startsWith(WIKI_BASE)) {
+    createOrShowWikiWindow(url);
+  }
+});

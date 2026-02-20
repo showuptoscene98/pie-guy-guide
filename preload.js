@@ -19,8 +19,12 @@ contextBridge.exposeInMainWorld("api", {
   onUpdaterUpdateNotAvailable: (cb) => { ipcRenderer.on("updater:update-not-available", (e, info) => cb(info)); },
   onUpdaterDownloadProgress: (cb) => { ipcRenderer.on("updater:download-progress", (e, progress) => cb(progress)); },
   onUpdaterUpdateDownloaded: (cb) => { ipcRenderer.on("updater:update-downloaded", (e, info) => cb(info)); },
-  onUpdaterError: (cb) => { ipcRenderer.on("updater:error", (e, err) => cb(err)); }
+  onUpdaterError: (cb) => { ipcRenderer.on("updater:error", (e, err) => cb(err)); },
 
   // Project Gorgon news
-  fetchProjectGorgonNews: () => ipcRenderer.invoke("pg-news:fetch")
+  fetchProjectGorgonNews: () => ipcRenderer.invoke("pg-news:fetch"),
+
+  // Project Gorgon Wiki search
+  searchWiki: (query) => ipcRenderer.invoke("wiki:search", query),
+  openWikiPage: (url) => ipcRenderer.send("wiki:open", url)
 });

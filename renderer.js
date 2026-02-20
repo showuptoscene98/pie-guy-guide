@@ -143,30 +143,135 @@ function setupPgNews() {
       details.className = "home-update-item";
       const summary = document.createElement("summary");
       summary.textContent = u.date;
-      const body = document.createElement("div");
-      body.className = "home-update-body";
-      body.style.whiteSpace = "pre-wrap";
-      body.textContent = u.body;
+      const bodyEl = document.createElement("div");
+      bodyEl.className = "home-update-body";
+      const rawBody = (u.body || "").trim();
+      const paragraphs = rawBody ? rawBody.split(/\n\s*\n/).filter(Boolean) : [];
+      if (paragraphs.length) {
+        paragraphs.forEach((para) => {
+          const trimmed = para.replace(/\s+/g, " ").trim();
+          if (!trimmed) return;
+          const segments = trimmed.split(/\s+-\s+/);
+          segments.forEach((seg, i) => {
+            const text = seg.trim();
+            if (!text) return;
+            const p = document.createElement("p");
+            p.textContent = text;
+            bodyEl.appendChild(p);
+          });
+        });
+      }
       details.appendChild(summary);
-      details.appendChild(body);
+      details.appendChild(bodyEl);
       listEl.appendChild(details);
     });
   }
 
-  function load() {
+  function load(showLoading) {
     if (!window.api || !window.api.fetchProjectGorgonNews) {
       setError("News not available.");
       return;
     }
-    setLoading(true);
+    if (showLoading) setLoading(true);
     window.api.fetchProjectGorgonNews().then(({ updates, error }) => {
       if (error) setError(error);
       else render(updates);
     });
   }
 
-  if (refreshBtn) refreshBtn.addEventListener("click", load);
-  load();
+  if (refreshBtn) refreshBtn.addEventListener("click", () => load(true));
+  load(false);
+}
+
+// ——— Project Gorgon Wiki search (topbar) ———
+function setupWikiSearch() {
+  const wrap = document.getElementById("wikiSearchWrap");
+  const input = document.getElementById("wikiSearchInput");
+  const resultsEl = document.getElementById("wikiSearchResults");
+
+  if (!wrap || !input || !resultsEl || !window.api?.searchWiki) return;
+
+  let debounceTimer = null;
+  const DEBOUNCE_MS = 280;
+
+  function hideResults() {
+    resultsEl.classList.add("hidden");
+    resultsEl.innerHTML = "";
+  }
+
+  function showResults(items, error) {
+    resultsEl.innerHTML = "";
+    resultsEl.classList.remove("hidden");
+    if (error) {
+      const p = document.createElement("p");
+      p.className = "topbar-search-msg topbar-search-error";
+      p.textContent = error;
+      resultsEl.appendChild(p);
+      return;
+    }
+    if (!items || items.length === 0) {
+      const p = document.createElement("p");
+      p.className = "topbar-search-msg muted";
+      p.textContent = "No results. Try different words.";
+      resultsEl.appendChild(p);
+      return;
+    }
+    items.forEach((item) => {
+      const row = document.createElement("button");
+      row.type = "button";
+      row.className = "topbar-search-item";
+      row.innerHTML = `<span class="topbar-search-item-title">${escapeHtml(item.title)}</span><span class="topbar-search-item-snippet">${escapeHtml(item.snippet)}</span>`;
+      row.addEventListener("click", () => {
+        if (window.api.openWikiPage) window.api.openWikiPage(item.url);
+        input.value = "";
+        hideResults();
+      });
+      resultsEl.appendChild(row);
+    });
+  }
+
+  function escapeHtml(s) {
+    const div = document.createElement("div");
+    div.textContent = s;
+    return div.innerHTML;
+  }
+
+  function runSearch() {
+    const q = (input.value || "").trim();
+    if (!q) {
+      hideResults();
+      return;
+    }
+    window.api.searchWiki(q).then(({ results, error }) => {
+      showResults(results, error);
+    });
+  }
+
+  input.addEventListener("input", () => {
+    clearTimeout(debounceTimer);
+    const q = (input.value || "").trim();
+    if (!q) {
+      hideResults();
+      return;
+    }
+    debounceTimer = setTimeout(runSearch, DEBOUNCE_MS);
+  });
+
+  input.addEventListener("focus", () => {
+    const q = (input.value || "").trim();
+    if (q) runSearch();
+  });
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      hideResults();
+      input.blur();
+    }
+  });
+
+  document.addEventListener("click", (e) => {
+    if (wrap && !wrap.contains(e.target)) hideResults();
+  });
 }
 
 // run after DOM loads
@@ -174,4 +279,5 @@ window.addEventListener("DOMContentLoaded", () => {
   setupLevelingAccordion();
   setupUpdaterUI();
   setupPgNews();
+  setupWikiSearch();
 });
