@@ -1,7 +1,13 @@
-const { app, BrowserWindow, ipcMain, globalShortcut } = require("electron");
+const { app, BrowserWindow, ipcMain, globalShortcut, Tray, nativeImage, Menu, screen } = require("electron");
 const path = require("path");
 const https = require("https");
 const { autoUpdater } = require("electron-updater");
+
+// Force cache and userData to a writable location (avoids "Unable to move the cache" / "Access is denied" when run from Program Files or restricted paths)
+const appData = app.getPath("appData");
+const appName = "Pie Guy Guide";
+app.setPath("userData", path.join(appData, appName));
+app.setPath("cache", path.join(appData, appName, "Cache"));
 
 const PG_NEWS_URL = "https://cdn.projectgorgon.com/news.txt";
 const PG_NEWS_MAX_ITEMS = 6;
@@ -69,8 +75,11 @@ const ANCHOR_OFFSET_PX = 12;
 const ANCHOR_POLL_MS = 400;
 
 let mainWindow = null;
+let appTray = null;
 let mapWindow = null;
 let dungeonWindow = null;
+let mapClickthrough = false;
+let dungeonClickthrough = false;
 let wikiWindow = null;
 
 function isGameWindow(w) {
@@ -99,6 +108,19 @@ function getGameWindowBounds() {
   return null;
 }
 
+/** Position overlay at top-right of primary display work area */
+function positionOverlayTopRight(win) {
+  if (!win || win.isDestroyed()) return;
+  try {
+    const primary = screen.getPrimaryDisplay();
+    const work = primary.workArea ?? primary.bounds;
+    const [w, h] = win.getSize();
+    const x = Math.round(work.x + work.width - w - ANCHOR_OFFSET_PX);
+    const y = Math.round(work.y + ANCHOR_OFFSET_PX);
+    win.setPosition(x, y);
+  } catch (_) {}
+}
+
 function startAnchoredToGame(win) {
   try {
     const apply = () => {
@@ -110,6 +132,8 @@ function startAnchoredToGame(win) {
           const x = Math.round(game.x + game.width - w - ANCHOR_OFFSET_PX);
           const y = Math.round(game.y + ANCHOR_OFFSET_PX);
           win.setPosition(x, y);
+        } else {
+          positionOverlayTopRight(win);
         }
       } catch (_) {}
     };
@@ -117,10 +141,10 @@ function startAnchoredToGame(win) {
     win.once("show", () => {
       try {
         apply();
-        if (!getGameWindowBounds()) win.center();
+        if (!getGameWindowBounds()) positionOverlayTopRight(win);
         win._anchorInterval = setInterval(apply, ANCHOR_POLL_MS);
       } catch (_) {
-        win.center();
+        positionOverlayTopRight(win);
       }
     });
     win.on("closed", () => {
@@ -130,16 +154,29 @@ function startAnchoredToGame(win) {
 }
 
 function createOverlayWindow(file) {
+  const width = 1100;
+  const height = 760;
+  let x, y;
+  try {
+    const primary = screen.getPrimaryDisplay();
+    const work = primary.workArea ?? primary.bounds;
+    x = Math.round(work.x + work.width - width - ANCHOR_OFFSET_PX);
+    y = Math.round(work.y + ANCHOR_OFFSET_PX);
+  } catch (_) {
+    x = 0;
+    y = 0;
+  }
   const win = new BrowserWindow({
-    width: 1100,
-    height: 760,
+    width,
+    height,
     minWidth: 900,
     minHeight: 620,
+    x,
+    y,
     frame: false,
     show: true,
     backgroundColor: "#111111",
     alwaysOnTop: true,
-    center: true,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
@@ -147,7 +184,11 @@ function createOverlayWindow(file) {
     }
   });
 
-  if (windowManager) startAnchoredToGame(win);
+  if (windowManager) {
+    startAnchoredToGame(win);
+  } else {
+    win.once("show", () => positionOverlayTopRight(win));
+  }
   const filePath = path.isAbsolute(file) ? file : path.join(__dirname, file);
   win.loadFile(filePath).catch(() => {}).finally(() => {
     if (!win.isDestroyed()) {
@@ -166,6 +207,7 @@ function createMainWindow() {
     minHeight: 700,
     frame: false,
     backgroundColor: "#1a1a1a",
+    alwaysOnTop: true,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
@@ -175,13 +217,58 @@ function createMainWindow() {
 
   mainWindow.loadFile("index.html");
   mainWindow.on("closed", () => {
+    if (appTray && !appTray.isDestroyed()) {
+      appTray.destroy();
+      appTray = null;
+    }
     mainWindow = null;
   });
+
+  createTray();
+}
+
+function createTray() {
+  if (appTray) return;
+  const iconPath = app.isPackaged
+    ? path.join(process.resourcesPath, "assets", "icon.png")
+    : path.join(__dirname, "assets", "icon.png");
+  let icon = nativeImage.createFromPath(iconPath);
+  if (icon.isEmpty()) {
+    icon = nativeImage.createFromDataURL(
+      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAHklEQVQ4T2NkYGD4z0ABYBw1gGE0DBiGQRgwEpMBABPwAfG6k0g1AAAAAElFTkSuQmCC"
+    );
+  }
+  if (icon.isEmpty()) return;
+  appTray = new Tray(icon.resize({ width: 16, height: 16 }));
+  appTray.setToolTip("Pie Guy Guide");
+  appTray.on("click", () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+  appTray.setContextMenu(
+    Menu.buildFromTemplate([
+      { label: "Show", click: () => mainWindow && !mainWindow.isDestroyed() && (mainWindow.show(), mainWindow.focus()) },
+      { type: "separator" },
+      { label: "Quit", click: () => app.quit() }
+    ])
+  );
+}
+
+function minimizeMainToTray() {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.hide();
+  }
 }
 
 function restoreMainIfMinimized() {
-  if (mainWindow && mainWindow.isMinimized()) {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  if (mainWindow.isMinimized()) {
     mainWindow.restore();
+    mainWindow.focus();
+  } else if (!mainWindow.isVisible()) {
+    mainWindow.show();
     mainWindow.focus();
   }
 }
@@ -213,11 +300,31 @@ app.whenReady().then(() => {
   createMainWindow();
   setupAutoUpdater();
 
-  // Hotkey: F7 minimize/restore
+  // Hotkey: F7 minimize to tray / restore
   globalShortcut.register("F7", () => {
-    if (!mainWindow) return;
-    if (mainWindow.isMinimized()) mainWindow.restore();
-    else mainWindow.minimize();
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    if (mainWindow.isMinimized()) {
+      mainWindow.restore();
+      mainWindow.focus();
+    } else if (mainWindow.isVisible()) {
+      minimizeMainToTray();
+    } else {
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+
+  // Hotkey: F8 toggle overlay click-through (map or dungeon, whichever is open)
+  globalShortcut.register("F8", () => {
+    if (mapWindow && !mapWindow.isDestroyed() && mapWindow.isVisible()) {
+      mapClickthrough = !mapClickthrough;
+      setOverlayClickthrough(mapWindow, mapClickthrough);
+      return;
+    }
+    if (dungeonWindow && !dungeonWindow.isDestroyed() && dungeonWindow.isVisible()) {
+      dungeonClickthrough = !dungeonClickthrough;
+      setOverlayClickthrough(dungeonWindow, dungeonClickthrough);
+    }
   });
 });
 
@@ -231,7 +338,11 @@ app.on("window-all-closed", () => {
 
 // Main controls
 ipcMain.on("main:minimize", () => {
-  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.minimize();
+  minimizeMainToTray();
+});
+ipcMain.on("main:setOpacity", (event, value) => {
+  const opacity = Math.min(1, Math.max(0.2, Number(value)));
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.setOpacity(opacity);
 });
 ipcMain.on("main:close", () => {
   if (mainWindow && !mainWindow.isDestroyed()) {
@@ -250,11 +361,12 @@ ipcMain.on("overlay:openMap", () => {
       return;
     }
 
-    if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isMinimized()) mainWindow.minimize();
+    if (mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible()) minimizeMainToTray();
 
     mapWindow = createOverlayWindow("map.html");
     mapWindow.on("closed", () => {
       mapWindow = null;
+      mapClickthrough = false;
       restoreMainIfMinimized();
     });
   } catch (e) {
@@ -271,11 +383,12 @@ ipcMain.on("overlay:openDungeon", () => {
       return;
     }
 
-    if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isMinimized()) mainWindow.minimize();
+    if (mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible()) minimizeMainToTray();
 
     dungeonWindow = createOverlayWindow("dungeon.html");
     dungeonWindow.on("closed", () => {
       dungeonWindow = null;
+      dungeonClickthrough = false;
       restoreMainIfMinimized();
     });
   } catch (e) {
@@ -287,6 +400,25 @@ ipcMain.on("overlay:openDungeon", () => {
 ipcMain.on("overlay:close", (event) => {
   const win = BrowserWindow.fromWebContents(event.sender);
   win?.close();
+});
+
+function setOverlayClickthrough(win, enabled) {
+  if (!win || win.isDestroyed()) return;
+  win.setIgnoreMouseEvents(enabled, { forward: true });
+  win.webContents.send("overlay:clickthroughState", enabled);
+}
+
+ipcMain.on("overlay:setClickthrough", (event, enabled) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (!win) return;
+  const on = Boolean(enabled);
+  if (win === mapWindow) {
+    mapClickthrough = on;
+    setOverlayClickthrough(mapWindow, on);
+  } else if (win === dungeonWindow) {
+    dungeonClickthrough = on;
+    setOverlayClickthrough(dungeonWindow, on);
+  }
 });
 
 // Updater
@@ -376,6 +508,7 @@ function createOrShowWikiWindow(url) {
     minHeight: 480,
     title: "Project Gorgon Wiki",
     backgroundColor: "#1a1a1a",
+    alwaysOnTop: true,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true
