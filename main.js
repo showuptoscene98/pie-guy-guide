@@ -174,6 +174,7 @@ function createOverlayWindow(file) {
     x,
     y,
     frame: false,
+    thickFrame: false,
     show: true,
     backgroundColor: "#111111",
     alwaysOnTop: true,
@@ -183,6 +184,8 @@ function createOverlayWindow(file) {
       nodeIntegration: false
     }
   });
+
+  win.setAlwaysOnTop(true, "screen-saver");
 
   if (windowManager) {
     startAnchoredToGame(win);
@@ -206,6 +209,7 @@ function createMainWindow() {
     minWidth: 1100,
     minHeight: 700,
     frame: false,
+    thickFrame: false,
     backgroundColor: "#1a1a1a",
     alwaysOnTop: true,
     webPreferences: {
