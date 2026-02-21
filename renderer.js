@@ -121,7 +121,7 @@ const MAP_ZONES = [
 ];
 const DUNGEON_ZONES = [
   "Goblin Dungeon Lower", "Goblin Dungeon Upper", "Kur Tower", "Rahu Sewer",
-  "Serbule Crypt", "Wolf Cave", "Yeti Cave", "Myconian Cave"
+  "Serbule Crypt", "Wolf Cave", "Yeti Cave", "Myconian Cave", "Labyrinth Map"
 ];
 
 function setupZoneSelects() {
