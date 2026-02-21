@@ -7,7 +7,7 @@
   html, body { height:100%; }
   body {
     margin:0;
-    background:#111;
+    background: transparent;
     color:#fff;
     font-family:Arial, sans-serif;
     overflow:hidden;
@@ -15,7 +15,7 @@
 
   .titlebar {
     height: 64px;
-    background: #000;
+    background: rgba(0, 0, 0, 0.85);
     display:flex;
     flex-direction:column;
     padding: 8px 10px;
@@ -39,7 +39,7 @@
   .map-sidebar {
     width: 160px;
     flex-shrink: 0;
-    background: #0a0a0a;
+    background: transparent;
     border-right: 1px solid rgba(255,255,255,0.08);
     padding: 10px;
     display: flex;
@@ -146,10 +146,7 @@
     bottom: 0;
     overflow: hidden;
     touch-action: none;
-    background:
-      radial-gradient(800px 500px at 20% 10%, rgba(255,204,77,0.08), transparent 55%),
-      radial-gradient(800px 500px at 80% 20%, rgba(90,120,255,0.10), transparent 60%),
-      #111;
+    background: transparent;
   }
 
   .canvas {
@@ -158,8 +155,27 @@
     top:0;
     transform-origin:0 0;
     cursor:grab;
+    display:inline-block;
   }
   .canvas.dragging { cursor:grabbing; }
+
+  .player-icon {
+    position:absolute;
+    width:20px;
+    height:20px;
+    margin-left:-10px;
+    margin-top:-10px;
+    border-radius:50%;
+    background:#00cc66;
+    border:2px solid #fff;
+    box-shadow:0 0 6px rgba(0,0,0,0.8);
+    cursor:grab;
+    z-index:2;
+  }
+  .player-icon.dragging { cursor:grabbing; }
+  .player-icon.hidden { display:none; }
+  .map-sidebar .minimap-track-wrap { margin-top:8px; }
+  .map-sidebar .minimap-track-wrap label { display:flex; align-items:center; gap:6px; cursor:pointer; font-size:12px; }
 
   img {
     display:block;
@@ -186,6 +202,16 @@
     cursor: pointer;
     user-select: none;
   }
+
+  body.titlebar-transparent .titlebar {
+    background: transparent;
+  }
+  body.titlebar-transparent .titlebar .toprow > div:first-child > div:first-child,
+  body.titlebar-transparent .titlebar .hint,
+  body.titlebar-transparent .titlebar .clickthrough-wrap label,
+  body.titlebar-transparent .titlebar .btn {
+    text-shadow: 0 0 4px #000, 0 1px 2px #000;
+  }
 </style>
 </head>
 <body tabindex="0">
@@ -194,7 +220,7 @@
   <div class="toprow">
     <div>
       <div style="font-weight:900;">Maps</div>
-      <div class="hint">Drag to pan • Mouse wheel zooms • ESC closes • F8 click-through</div>
+      <div class="hint">Drag to pan • Mouse wheel zooms • ESC closes • F6 title bar • F8 click-through</div>
     </div>
     <div class="clickthrough-wrap">
       <input type="checkbox" id="clickthroughCheck" />
@@ -217,11 +243,18 @@
         <span class="map-opacity-value" id="mapOpacityValue">100%</span>
       </div>
     </div>
+    <div class="minimap-track-wrap">
+      <label>
+        <input type="checkbox" id="minimapTrackCheck" />
+        <span>Track from game minimap</span>
+      </label>
+    </div>
   </aside>
   <div class="stage-wrap">
     <div class="stage" id="stage">
       <div class="canvas" id="canvas">
         <img id="mapImage" src="" draggable="false" alt="Map" />
+        <div class="player-icon hidden" id="playerIcon" title="You are here" aria-hidden="true"></div>
       </div>
     </div>
   </div>
@@ -255,6 +288,15 @@
     window.api.onOverlayClickthroughState?.((value) => {
       clickthroughCheck.checked = !!value;
     });
+  }
+
+  // F6: title bar transparent / visible
+  function setTitleBarVisible(visible) {
+    document.body.classList.toggle("titlebar-transparent", !visible);
+  }
+  if (window.api) {
+    window.api.getOverlayTitleBarVisible?.().then(setTitleBarVisible);
+    window.api.onOverlayTitleBarVisible?.(setTitleBarVisible);
   }
 
   const maps = [
@@ -293,6 +335,7 @@
       if (window.api && window.api.setOverlaySize && mapImage.naturalWidth && mapImage.naturalHeight) {
         window.api.setOverlaySize(MAP_SIDEBAR_WIDTH + mapImage.naturalWidth, mapImage.naturalHeight);
       }
+      loadPlayerIconPosition();
     };
     mapImage.src = `maps/${name}.jpg`;
     scale = 0.8; x = 40; y = 40;
@@ -321,12 +364,250 @@
   loadMap(maps[0]);
   mapSelect.value = maps[0];
 
+  // Player icon: position (normalized 0-1), draggable, show when zone matches
+  const playerIcon = document.getElementById("playerIcon");
+  let currentMapZoneFromApp = "";
+  let playerIconNorm = { x: 0.5, y: 0.5 };
+  let iconDragging = false;
+  let iconDragStart = { px: 0, py: 0, nx: 0.5, ny: 0.5 };
+
+  function applyPlayerIconPosition() {
+    if (!playerIcon || !mapImage.naturalWidth || !mapImage.naturalHeight) return;
+    const nx = Math.max(0, Math.min(1, playerIconNorm.x));
+    const ny = Math.max(0, Math.min(1, playerIconNorm.y));
+    playerIcon.style.left = (nx * mapImage.naturalWidth) + "px";
+    playerIcon.style.top = (ny * mapImage.naturalHeight) + "px";
+  }
+
+  function updatePlayerIconVisibility() {
+    if (!playerIcon) return;
+    const show = currentMapZoneFromApp && mapSelect.value === currentMapZoneFromApp;
+    playerIcon.classList.toggle("hidden", !show);
+    if (show) applyPlayerIconPosition();
+  }
+
+  function loadPlayerIconPosition() {
+    const zone = mapSelect.value;
+    if (!zone || !window.api?.getPlayerIconPosition) return;
+    window.api.getPlayerIconPosition("map", zone).then((pos) => {
+      if (pos && typeof pos.x === "number" && typeof pos.y === "number") {
+        playerIconNorm.x = pos.x;
+        playerIconNorm.y = pos.y;
+      } else {
+        playerIconNorm.x = 0.5;
+        playerIconNorm.y = 0.5;
+      }
+      applyPlayerIconPosition();
+    });
+  }
+
+  function savePlayerIconPosition() {
+    const zone = mapSelect.value;
+    if (!zone || !window.api?.setPlayerIconPosition) return;
+    window.api.setPlayerIconPosition("map", zone, playerIconNorm.x, playerIconNorm.y);
+  }
+
+  if (playerIcon) {
+    playerIcon.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0 || !currentMapZoneFromApp || mapSelect.value !== currentMapZoneFromApp) return;
+      e.preventDefault();
+      e.stopPropagation();
+      iconDragging = true;
+      playerIcon.setPointerCapture(e.pointerId);
+      playerIcon.classList.add("dragging");
+      iconDragStart = { px: e.clientX, py: e.clientY, nx: playerIconNorm.x, ny: playerIconNorm.y };
+    });
+  }
+  stage.addEventListener("pointermove", (e) => {
+    if (!iconDragging || !mapImage.naturalWidth || !mapImage.naturalHeight) return;
+    const dx = (e.clientX - iconDragStart.px) / scale;
+    const dy = (e.clientY - iconDragStart.py) / scale;
+    const w = mapImage.naturalWidth;
+    const h = mapImage.naturalHeight;
+    playerIconNorm.x = Math.max(0, Math.min(1, iconDragStart.nx + dx / w));
+    playerIconNorm.y = Math.max(0, Math.min(1, iconDragStart.ny + dy / h));
+    applyPlayerIconPosition();
+  });
+  stage.addEventListener("pointerup", () => {
+    if (iconDragging) {
+      iconDragging = false;
+      playerIcon.classList.remove("dragging");
+      savePlayerIconPosition();
+    }
+  });
+  stage.addEventListener("pointercancel", () => {
+    if (iconDragging) {
+      iconDragging = false;
+      playerIcon.classList.remove("dragging");
+    }
+  });
+
+  function applyZoneFromApp(zone) {
+    currentMapZoneFromApp = zone || "";
+    if (zone && maps.includes(zone) && mapSelect.value !== zone) {
+      mapSelect.value = zone;
+      loadMap(zone);
+    }
+    updatePlayerIconVisibility();
+    loadPlayerIconPosition();
+  }
+  if (window.api) {
+    window.api.getCurrentMapZone?.().then(applyZoneFromApp);
+    window.api.onCurrentMapZone?.(applyZoneFromApp);
+    window.api.onOverlaySwitchToMap?.((zone) => {
+      if (zone && maps.includes(zone)) {
+        mapSelect.value = zone;
+        loadMap(zone);
+        currentMapZoneFromApp = zone;
+        updatePlayerIconVisibility();
+        loadPlayerIconPosition();
+      }
+    });
+  }
+  mapSelect.addEventListener("change", () => {
+    updatePlayerIconVisibility();
+    loadPlayerIconPosition();
+  });
+
+  // Minimap tracking: capture game window, crop minimap region, template match on map
+  const minimapTrackCheck = document.getElementById("minimapTrackCheck");
+  let minimapTrackInterval = null;
+  let minimapVideo = null;
+  let minimapStream = null;
+  const MINIMAP_REGION = { x: 0.78, y: 0.05, w: 0.2, h: 0.2 };
+  const MAP_DOWNSCALE = 128;
+  const MINIMAP_PATCH = 24;
+  const SEARCH_STEP = 4;
+
+  function stopMinimapTracking() {
+    if (minimapTrackInterval) {
+      clearInterval(minimapTrackInterval);
+      minimapTrackInterval = null;
+    }
+    if (minimapStream) {
+      minimapStream.getTracks().forEach((t) => t.stop());
+      minimapStream = null;
+    }
+    if (minimapVideo && minimapVideo.srcObject) {
+      minimapVideo.srcObject = null;
+    }
+  }
+
+  function grayscaleSample(ctx, x, y, w, h) {
+    const data = ctx.getImageData(x, y, w, h).data;
+    const out = new Float32Array(w * h);
+    for (let i = 0; i < data.length; i += 4) {
+      out[i / 4] = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114) / 255;
+    }
+    return out;
+  }
+
+  function runMinimapTrack() {
+    if (!minimapVideo || !mapImage.complete || !mapImage.naturalWidth || mapSelect.value !== currentMapZoneFromApp) return;
+    const vw = minimapVideo.videoWidth;
+    const vh = minimapVideo.videoHeight;
+    if (!vw || !vh) return;
+    const rx = Math.floor(MINIMAP_REGION.x * vw);
+    const ry = Math.floor(MINIMAP_REGION.y * vh);
+    const rw = Math.max(8, Math.floor(MINIMAP_REGION.w * vw));
+    const rh = Math.max(8, Math.floor(MINIMAP_REGION.h * vh));
+    if (rx + rw > vw || ry + rh > vh) return;
+
+    const mapW = mapImage.naturalWidth;
+    const mapH = mapImage.naturalHeight;
+
+    const capCanvas = document.createElement("canvas");
+    capCanvas.width = vw;
+    capCanvas.height = vh;
+    const capCtx = capCanvas.getContext("2d");
+    capCtx.drawImage(minimapVideo, 0, 0);
+    const mmSmall = document.createElement("canvas");
+    mmSmall.width = MINIMAP_PATCH;
+    mmSmall.height = MINIMAP_PATCH;
+    mmSmall.getContext("2d").drawImage(capCanvas, rx, ry, rw, rh, 0, 0, MINIMAP_PATCH, MINIMAP_PATCH);
+    const minimapPixels = grayscaleSample(mmSmall.getContext("2d"), 0, 0, MINIMAP_PATCH, MINIMAP_PATCH);
+
+    const mapSmall = document.createElement("canvas");
+    mapSmall.width = MAP_DOWNSCALE;
+    mapSmall.height = Math.round(MAP_DOWNSCALE * (mapH / mapW));
+    const mapSmallH = mapSmall.height;
+    mapSmall.getContext("2d").drawImage(mapImage, 0, 0, mapW, mapH, 0, 0, MAP_DOWNSCALE, mapSmallH);
+    const mapPixels = grayscaleSample(mapSmall.getContext("2d"), 0, 0, MAP_DOWNSCALE, mapSmallH);
+
+    let bestSx = 0, bestSy = 0, bestSad = Infinity;
+    for (let sy = 0; sy + MINIMAP_PATCH <= mapSmallH; sy += SEARCH_STEP) {
+      for (let sx = 0; sx + MINIMAP_PATCH <= MAP_DOWNSCALE; sx += SEARCH_STEP) {
+        let sad = 0;
+        for (let my = 0; my < MINIMAP_PATCH; my++) {
+          for (let mx = 0; mx < MINIMAP_PATCH; mx++) {
+            const mapIdx = (sy + my) * MAP_DOWNSCALE + (sx + mx);
+            const mmIdx = my * MINIMAP_PATCH + mx;
+            sad += Math.abs((mapPixels[mapIdx] || 0) - (minimapPixels[mmIdx] || 0));
+          }
+        }
+        if (sad < bestSad) {
+          bestSad = sad;
+          bestSx = sx;
+          bestSy = sy;
+        }
+      }
+    }
+    const centerX = (bestSx + MINIMAP_PATCH / 2) / MAP_DOWNSCALE;
+    const centerY = (bestSy + MINIMAP_PATCH / 2) / mapSmallH;
+    playerIconNorm.x = centerX;
+    playerIconNorm.y = centerY;
+    applyPlayerIconPosition();
+  }
+
+  async function startMinimapTracking() {
+    stopMinimapTracking();
+    if (!window.api?.getGameWindowSourceId) return;
+    const result = await window.api.getGameWindowSourceId();
+    if (!result || !result.sourceId) return;
+    try {
+      minimapVideo = document.createElement("video");
+      minimapVideo.autoplay = true;
+      minimapVideo.muted = true;
+      minimapVideo.playsInline = true;
+      minimapVideo.style.cssText = "position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;";
+      document.body.appendChild(minimapVideo);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: {
+          mandatory: {
+            chromeMediaSource: "desktop",
+            chromeMediaSourceId: result.sourceId
+          }
+        }
+      });
+      minimapStream = stream;
+      minimapVideo.srcObject = stream;
+      await new Promise((resolve, reject) => {
+        minimapVideo.onloadedmetadata = resolve;
+        minimapVideo.onerror = reject;
+        if (minimapVideo.readyState >= 1) resolve();
+      });
+      minimapTrackInterval = setInterval(runMinimapTrack, 800);
+    } catch (err) {
+      console.warn("Minimap tracking failed:", err);
+      stopMinimapTracking();
+    }
+  }
+
+  if (minimapTrackCheck) {
+    minimapTrackCheck.addEventListener("change", () => {
+      if (minimapTrackCheck.checked) startMinimapTracking();
+      else stopMinimapTracking();
+    });
+  }
+  window.addEventListener("beforeunload", stopMinimapTracking);
+
   // ===== PAN (pointer events = reliable) =====
   let dragging = false;
   let start = { px:0, py:0, x:0, y:0 };
 
   stage.addEventListener("pointerdown", (e) => {
-    // Only left mouse / primary pointer
+    if (e.target === playerIcon || (playerIcon && playerIcon.contains(e.target))) return;
     dragging = true;
     stage.setPointerCapture(e.pointerId);
     start = { px: e.clientX, py: e.clientY, x, y };

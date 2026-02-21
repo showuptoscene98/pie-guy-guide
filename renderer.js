@@ -23,6 +23,7 @@ function go(name) {
     dungeons: "navDungeons",
     leveling: "navLeveling",
     tips: "navTips",
+    instructions: "navInstructions",
     about: "navAbout"
   };
 
@@ -112,6 +113,64 @@ function setupOptionsUI() {
 
 setupOpacitySlider();
 setupOptionsUI();
+
+// Current zone / dungeon selects (player location for overlay player icon)
+const MAP_ZONES = [
+  "AnagogeIsland", "Eltibule", "Fae Realm", "Gazluk", "Ilmari", "Kur Mountains",
+  "Povus", "Rahu", "Serbule", "SerbuleHills", "Sun Vale"
+];
+const DUNGEON_ZONES = [
+  "Goblin Dungeon Lower", "Goblin Dungeon Upper", "Kur Tower", "Rahu Sewer",
+  "Serbule Crypt", "Wolf Cave", "Yeti Cave", "Myconian Cave"
+];
+
+function setupZoneSelects() {
+  const mapSelect = document.getElementById("currentMapZoneSelect");
+  const dungeonSelect = document.getElementById("currentDungeonZoneSelect");
+  if (!window.api) return;
+
+  if (mapSelect) {
+    mapSelect.innerHTML = "";
+    const none = document.createElement("option");
+    none.value = "";
+    none.textContent = "None";
+    mapSelect.appendChild(none);
+    MAP_ZONES.forEach((name) => {
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      mapSelect.appendChild(opt);
+    });
+    window.api.getCurrentMapZone().then((v) => {
+      if (v && MAP_ZONES.includes(v)) mapSelect.value = v;
+    });
+    mapSelect.addEventListener("change", () => {
+      window.api.setCurrentMapZone(mapSelect.value);
+    });
+  }
+
+  if (dungeonSelect) {
+    dungeonSelect.innerHTML = "";
+    const none = document.createElement("option");
+    none.value = "";
+    none.textContent = "None";
+    dungeonSelect.appendChild(none);
+    DUNGEON_ZONES.forEach((name) => {
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      dungeonSelect.appendChild(opt);
+    });
+    window.api.getCurrentDungeonZone().then((v) => {
+      if (v && DUNGEON_ZONES.includes(v)) dungeonSelect.value = v;
+    });
+    dungeonSelect.addEventListener("change", () => {
+      window.api.setCurrentDungeonZone(dungeonSelect.value);
+    });
+  }
+}
+
+setupZoneSelects();
 
 // Leveling accordion: only one bracket open at a time
 function setupLevelingAccordion() {

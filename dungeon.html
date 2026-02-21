@@ -7,7 +7,7 @@
   html, body { height:100%; }
   body {
     margin:0;
-    background:#111;
+    background: transparent;
     color:#fff;
     font-family:Arial, sans-serif;
     overflow:hidden;
@@ -15,7 +15,7 @@
 
   .titlebar {
     height: 64px;
-    background: #000;
+    background: rgba(0, 0, 0, 0.85);
     display:flex;
     flex-direction:column;
     padding: 8px 10px;
@@ -39,7 +39,7 @@
   .dungeon-sidebar {
     width: 160px;
     flex-shrink: 0;
-    background: #0a0a0a;
+    background: transparent;
     border-right: 1px solid rgba(255,255,255,0.08);
     padding: 10px;
     display: flex;
@@ -145,10 +145,7 @@
     bottom: 0;
     overflow: hidden;
     touch-action: none;
-    background:
-      radial-gradient(800px 500px at 20% 10%, rgba(255,204,77,0.08), transparent 55%),
-      radial-gradient(800px 500px at 80% 20%, rgba(90,120,255,0.10), transparent 60%),
-      #111;
+    background: transparent;
   }
 
   .canvas {
@@ -157,8 +154,25 @@
     top:0;
     transform-origin:0 0;
     cursor:grab;
+    display:inline-block;
   }
   .canvas.dragging { cursor:grabbing; }
+
+  .player-icon {
+    position:absolute;
+    width:20px;
+    height:20px;
+    margin-left:-10px;
+    margin-top:-10px;
+    border-radius:50%;
+    background:#00cc66;
+    border:2px solid #fff;
+    box-shadow:0 0 6px rgba(0,0,0,0.8);
+    cursor:grab;
+    z-index:2;
+  }
+  .player-icon.dragging { cursor:grabbing; }
+  .player-icon.hidden { display:none; }
 
   img {
     display:block;
@@ -185,6 +199,16 @@
     cursor: pointer;
     user-select: none;
   }
+
+  body.titlebar-transparent .titlebar {
+    background: transparent;
+  }
+  body.titlebar-transparent .titlebar .toprow > div:first-child > div:first-child,
+  body.titlebar-transparent .titlebar .hint,
+  body.titlebar-transparent .titlebar .clickthrough-wrap label,
+  body.titlebar-transparent .titlebar .btn {
+    text-shadow: 0 0 4px #000, 0 1px 2px #000;
+  }
 </style>
 </head>
 <body tabindex="0">
@@ -193,7 +217,7 @@
   <div class="toprow">
     <div>
       <div style="font-weight:900;">Dungeons</div>
-      <div class="hint">Drag to pan • Mouse wheel zooms • ESC closes • F8 click-through</div>
+      <div class="hint">Drag to pan • Mouse wheel zooms • ESC closes • F6 title bar • F8 click-through</div>
     </div>
     <div class="clickthrough-wrap">
       <input type="checkbox" id="clickthroughCheck" />
@@ -221,6 +245,7 @@
     <div class="stage" id="stage">
       <div class="canvas" id="canvas">
         <img id="dungeonImage" src="" draggable="false" alt="Dungeon" />
+        <div class="player-icon hidden" id="playerIcon" title="You are here" aria-hidden="true"></div>
       </div>
     </div>
   </div>
@@ -251,6 +276,15 @@
     window.api.onOverlayClickthroughState?.((value) => {
       clickthroughCheck.checked = !!value;
     });
+  }
+
+  // F6: title bar transparent / visible
+  function setTitleBarVisible(visible) {
+    document.body.classList.toggle("titlebar-transparent", !visible);
+  }
+  if (window.api) {
+    window.api.getOverlayTitleBarVisible?.().then(setTitleBarVisible);
+    window.api.onOverlayTitleBarVisible?.(setTitleBarVisible);
   }
 
   const dungeons = [
@@ -286,6 +320,7 @@
       if (window.api && window.api.setOverlaySize && dungeonImage.naturalWidth && dungeonImage.naturalHeight) {
         window.api.setOverlaySize(DUNGEON_SIDEBAR_WIDTH + dungeonImage.naturalWidth, dungeonImage.naturalHeight);
       }
+      loadPlayerIconPosition();
     };
     dungeonImage.src = `dungeons/${name}.jpg`;
     scale = 0.8; x = 40; y = 40;
@@ -312,11 +347,117 @@
   loadDungeon(dungeons[0]);
   dungeonSelect.value = dungeons[0];
 
+  // Player icon: position (normalized 0-1), draggable, show when dungeon matches
+  const playerIcon = document.getElementById("playerIcon");
+  let currentDungeonZoneFromApp = "";
+  let playerIconNorm = { x: 0.5, y: 0.5 };
+  let iconDragging = false;
+  let iconDragStart = { px: 0, py: 0, nx: 0.5, ny: 0.5 };
+
+  function applyPlayerIconPosition() {
+    if (!playerIcon || !dungeonImage.naturalWidth || !dungeonImage.naturalHeight) return;
+    const nx = Math.max(0, Math.min(1, playerIconNorm.x));
+    const ny = Math.max(0, Math.min(1, playerIconNorm.y));
+    playerIcon.style.left = (nx * dungeonImage.naturalWidth) + "px";
+    playerIcon.style.top = (ny * dungeonImage.naturalHeight) + "px";
+  }
+
+  function updatePlayerIconVisibility() {
+    if (!playerIcon) return;
+    const show = currentDungeonZoneFromApp && dungeonSelect.value === currentDungeonZoneFromApp;
+    playerIcon.classList.toggle("hidden", !show);
+    if (show) applyPlayerIconPosition();
+  }
+
+  function loadPlayerIconPosition() {
+    const zone = dungeonSelect.value;
+    if (!zone || !window.api?.getPlayerIconPosition) return;
+    window.api.getPlayerIconPosition("dungeon", zone).then((pos) => {
+      if (pos && typeof pos.x === "number" && typeof pos.y === "number") {
+        playerIconNorm.x = pos.x;
+        playerIconNorm.y = pos.y;
+      } else {
+        playerIconNorm.x = 0.5;
+        playerIconNorm.y = 0.5;
+      }
+      applyPlayerIconPosition();
+    });
+  }
+
+  function savePlayerIconPosition() {
+    const zone = dungeonSelect.value;
+    if (!zone || !window.api?.setPlayerIconPosition) return;
+    window.api.setPlayerIconPosition("dungeon", zone, playerIconNorm.x, playerIconNorm.y);
+  }
+
+  if (playerIcon) {
+    playerIcon.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0 || !currentDungeonZoneFromApp || dungeonSelect.value !== currentDungeonZoneFromApp) return;
+      e.preventDefault();
+      e.stopPropagation();
+      iconDragging = true;
+      playerIcon.setPointerCapture(e.pointerId);
+      playerIcon.classList.add("dragging");
+      iconDragStart = { px: e.clientX, py: e.clientY, nx: playerIconNorm.x, ny: playerIconNorm.y };
+    });
+  }
+  stage.addEventListener("pointermove", (e) => {
+    if (!iconDragging || !dungeonImage.naturalWidth || !dungeonImage.naturalHeight) return;
+    const dx = (e.clientX - iconDragStart.px) / scale;
+    const dy = (e.clientY - iconDragStart.py) / scale;
+    const w = dungeonImage.naturalWidth;
+    const h = dungeonImage.naturalHeight;
+    playerIconNorm.x = Math.max(0, Math.min(1, iconDragStart.nx + dx / w));
+    playerIconNorm.y = Math.max(0, Math.min(1, iconDragStart.ny + dy / h));
+    applyPlayerIconPosition();
+  });
+  stage.addEventListener("pointerup", () => {
+    if (iconDragging) {
+      iconDragging = false;
+      playerIcon.classList.remove("dragging");
+      savePlayerIconPosition();
+    }
+  });
+  stage.addEventListener("pointercancel", () => {
+    if (iconDragging) {
+      iconDragging = false;
+      playerIcon.classList.remove("dragging");
+    }
+  });
+
+  function applyZoneFromApp(zone) {
+    currentDungeonZoneFromApp = zone || "";
+    if (zone && dungeons.includes(zone) && dungeonSelect.value !== zone) {
+      dungeonSelect.value = zone;
+      loadDungeon(zone);
+    }
+    updatePlayerIconVisibility();
+    loadPlayerIconPosition();
+  }
+  if (window.api) {
+    window.api.getCurrentDungeonZone?.().then(applyZoneFromApp);
+    window.api.onCurrentDungeonZone?.(applyZoneFromApp);
+    window.api.onOverlaySwitchToDungeon?.((zone) => {
+      if (zone && dungeons.includes(zone)) {
+        dungeonSelect.value = zone;
+        loadDungeon(zone);
+        currentDungeonZoneFromApp = zone;
+        updatePlayerIconVisibility();
+        loadPlayerIconPosition();
+      }
+    });
+  }
+  dungeonSelect.addEventListener("change", () => {
+    updatePlayerIconVisibility();
+    loadPlayerIconPosition();
+  });
+
   // Pan
   let dragging = false;
   let start = { px:0, py:0, x:0, y:0 };
 
   stage.addEventListener("pointerdown", (e) => {
+    if (e.target === playerIcon || (playerIcon && playerIcon.contains(e.target))) return;
     dragging = true;
     stage.setPointerCapture(e.pointerId);
     start = { px: e.clientX, py: e.clientY, x, y };

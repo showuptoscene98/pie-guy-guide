@@ -7,8 +7,22 @@ const { autoUpdater } = require("electron-updater");
 // Force cache and userData to a writable location (avoids "Unable to move the cache" / "Access is denied" when run from Program Files or restricted paths)
 const appData = app.getPath("appData");
 const appName = "Pie Guy Guide";
-app.setPath("userData", path.join(appData, appName));
-app.setPath("cache", path.join(appData, appName, "Cache"));
+const userDataPath = path.join(appData, appName);
+const cachePath = path.join(appData, appName, "Cache");
+app.setPath("userData", userDataPath);
+app.setPath("cache", cachePath);
+try {
+  fs.mkdirSync(userDataPath, { recursive: true });
+  fs.mkdirSync(cachePath, { recursive: true });
+  fs.mkdirSync(path.join(userDataPath, "GPUCache"), { recursive: true });
+} catch (_) {}
+
+// Single instance: avoid multiple processes sharing the same cache (prevents "Unable to move the cache: Access is denied")
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  app.quit();
+  process.exit(0);
+}
 
 const PG_NEWS_URL = "https://cdn.projectgorgon.com/news.txt";
 const PG_NEWS_MAX_ITEMS = 6;
@@ -84,7 +98,11 @@ let dungeonClickthrough = false;
 let wikiWindow = null;
 let currentOpacity = 1;
 let overlayAnchorTopRight = true;
+let overlayTitleBarVisible = true;
 let themePreference = "dark-red";
+let currentMapZone = "";
+let currentDungeonZone = "";
+let playerIconPositions = { map: {}, dungeon: {} };
 
 const PREFERENCES_PATH = path.join(app.getPath("userData"), "preferences.json");
 
@@ -94,12 +112,24 @@ function loadPreferences() {
     const prefs = JSON.parse(raw);
     if (typeof prefs.overlayAnchorTopRight === "boolean") overlayAnchorTopRight = prefs.overlayAnchorTopRight;
     if (typeof prefs.theme === "string" && ["dark", "dark-red", "normal"].includes(prefs.theme)) themePreference = prefs.theme;
+    if (typeof prefs.currentMapZone === "string") currentMapZone = prefs.currentMapZone;
+    if (typeof prefs.currentDungeonZone === "string") currentDungeonZone = prefs.currentDungeonZone;
+    if (prefs.playerIconPositions && typeof prefs.playerIconPositions === "object") {
+      if (prefs.playerIconPositions.map) playerIconPositions.map = prefs.playerIconPositions.map;
+      if (prefs.playerIconPositions.dungeon) playerIconPositions.dungeon = prefs.playerIconPositions.dungeon;
+    }
   } catch (_) {}
 }
 
 function savePreferences() {
   try {
-    fs.writeFileSync(PREFERENCES_PATH, JSON.stringify({ overlayAnchorTopRight, theme: themePreference }), "utf8");
+    fs.writeFileSync(PREFERENCES_PATH, JSON.stringify({
+      overlayAnchorTopRight,
+      theme: themePreference,
+      currentMapZone,
+      currentDungeonZone,
+      playerIconPositions
+    }), "utf8");
   } catch (_) {}
 }
 
@@ -191,7 +221,8 @@ function createOverlayWindow(file) {
     frame: false,
     thickFrame: false,
     show: true,
-    backgroundColor: "#111111",
+    transparent: true,
+    backgroundColor: "#00000000",
     alwaysOnTop: true,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
@@ -228,11 +259,26 @@ function createOverlayWindow(file) {
 
   win.loadFile(filePath).catch(() => {}).finally(() => {
     if (!win.isDestroyed()) {
+      win.webContents.send("overlay:titleBarVisible", overlayTitleBarVisible);
+      if (file === "map.html") win.webContents.send("overlay:currentMapZone", currentMapZone);
+      if (file === "dungeon.html") win.webContents.send("overlay:currentDungeonZone", currentDungeonZone);
       win.show();
       win.focus();
     }
   });
   return win;
+}
+
+function sendCurrentMapZoneToOverlay() {
+  if (mapWindow && !mapWindow.isDestroyed()) mapWindow.webContents.send("overlay:currentMapZone", currentMapZone);
+}
+function sendCurrentDungeonZoneToOverlay() {
+  if (dungeonWindow && !dungeonWindow.isDestroyed()) dungeonWindow.webContents.send("overlay:currentDungeonZone", currentDungeonZone);
+}
+
+function sendOverlayTitleBarVisible() {
+  if (mapWindow && !mapWindow.isDestroyed()) mapWindow.webContents.send("overlay:titleBarVisible", overlayTitleBarVisible);
+  if (dungeonWindow && !dungeonWindow.isDestroyed()) dungeonWindow.webContents.send("overlay:titleBarVisible", overlayTitleBarVisible);
 }
 
 function createMainWindow() {
@@ -378,6 +424,12 @@ app.whenReady().then(() => {
     }
   });
 
+  // Hotkey: F6 toggle overlay title bar transparent / visible
+  globalShortcut.register("F6", () => {
+    overlayTitleBarVisible = !overlayTitleBarVisible;
+    sendOverlayTitleBarVisible();
+  });
+
   // Hotkey: F8 toggle overlay click-through (map or dungeon, whichever is open)
   globalShortcut.register("F8", () => {
     if (mapWindow && !mapWindow.isDestroyed() && mapWindow.isVisible()) {
@@ -398,6 +450,14 @@ app.on("will-quit", () => {
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
+});
+
+app.on("second-instance", () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+  }
 });
 
 // Main controls
@@ -498,6 +558,42 @@ function setOverlayClickthrough(win, enabled) {
 }
 
 ipcMain.handle("overlay:getAnchorPreference", () => overlayAnchorTopRight);
+ipcMain.handle("overlay:getTitleBarVisible", () => overlayTitleBarVisible);
+ipcMain.handle("overlay:getCurrentMapZone", () => currentMapZone);
+ipcMain.on("overlay:setCurrentMapZone", (event, value) => {
+  currentMapZone = typeof value === "string" ? value : "";
+  savePreferences();
+  sendCurrentMapZoneToOverlay();
+  if (mapWindow && !mapWindow.isDestroyed()) mapWindow.webContents.send("overlay:switchToMap", currentMapZone);
+});
+ipcMain.handle("overlay:getCurrentDungeonZone", () => currentDungeonZone);
+ipcMain.on("overlay:setCurrentDungeonZone", (event, value) => {
+  currentDungeonZone = typeof value === "string" ? value : "";
+  savePreferences();
+  sendCurrentDungeonZoneToOverlay();
+  if (dungeonWindow && !dungeonWindow.isDestroyed()) dungeonWindow.webContents.send("overlay:switchToDungeon", currentDungeonZone);
+});
+ipcMain.handle("overlay:getPlayerIconPosition", (event, overlayType, zone) => {
+  const obj = overlayType === "dungeon" ? playerIconPositions.dungeon : playerIconPositions.map;
+  const pos = obj[zone];
+  return pos && typeof pos.x === "number" && typeof pos.y === "number" ? { x: pos.x, y: pos.y } : null;
+});
+ipcMain.on("overlay:setPlayerIconPosition", (event, overlayType, zone, x, y) => {
+  if (overlayType === "dungeon") {
+    playerIconPositions.dungeon[zone] = { x: Number(x), y: Number(y) };
+  } else {
+    playerIconPositions.map[zone] = { x: Number(x), y: Number(y) };
+  }
+  savePreferences();
+});
+ipcMain.handle("overlay:getGameWindowSourceId", async () => {
+  const { desktopCapturer } = require("electron");
+  const sources = await desktopCapturer.getSources({ types: ["window"], thumbnailSize: { width: 1, height: 1 } });
+  const pg = sources.find((s) => (s.name || "").includes("Project Gorgon"));
+  if (!pg) return null;
+  const bounds = getGameWindowBounds();
+  return { sourceId: pg.id, bounds: bounds || { x: 0, y: 0, width: 1920, height: 1080 } };
+});
 ipcMain.on("overlay:setAnchorPreference", (event, value) => {
   overlayAnchorTopRight = !!value;
   savePreferences();
