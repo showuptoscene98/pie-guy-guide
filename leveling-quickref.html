@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Leveling quick reference</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #1a1a1a;
+      color: #f2f2f2;
+      overflow: auto;
+    }
+
+    .titlebar {
+      height: 56px;
+      background: #0a0a0a;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      -webkit-app-region: drag;
+      user-select: none;
+    }
+    .titlebar-title {
+      font-weight: 900;
+      font-size: 15px;
+    }
+    .titlebar-hint {
+      font-size: 11px;
+      color: rgba(242,242,242,0.65);
+      margin-top: 2px;
+    }
+    .titlebar-close {
+      -webkit-app-region: no-drag;
+      padding: 8px 14px;
+      font-size: 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: #2f2f2f;
+      color: #f2f2f2;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .titlebar-close:hover {
+      background: #3f3f3f;
+    }
+
+    .content {
+      padding: 16px 20px 24px;
+      max-width: 720px;
+    }
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.04);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th, td {
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    th {
+      background: rgba(255,204,77,0.12);
+      color: #ffcc4d;
+      font-weight: 700;
+    }
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+    tbody tr:hover td {
+      background: rgba(255,255,255,0.04);
+    }
+    td {
+      color: rgba(242,242,242,0.85);
+    }
+    td:first-child {
+      color: #f2f2f2;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body tabindex="0">
+
+  <div class="titlebar">
+    <div>
+      <div class="titlebar-title">Leveling quick reference</div>
+      <div class="titlebar-hint">Press ESC to close</div>
+    </div>
+    <button type="button" class="titlebar-close" onclick="window.api.closeOverlay()">Close</button>
+  </div>
+
+  <div class="content">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Level range</th>
+            <th>Primary areas</th>
+            <th>Dungeons / notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>0–10</td><td>Anagoge Island</td><td>Island dungeon, spider cave</td></tr>
+          <tr><td>5–20</td><td>Serbule, Serbule Hills</td><td>Serbule Crypt, Serbule Sewers</td></tr>
+          <tr><td>20–40</td><td>Eltibule</td><td>Myconian Cave (25–30), Goblin Dungeon (30–45)</td></tr>
+          <tr><td>40–60</td><td>Kur Mountains</td><td>Kur Tower (main 40–60 grind)</td></tr>
+          <tr><td>60–70</td><td>Kur</td><td>Wolf Cave (skin werewolves)</td></tr>
+          <tr><td>60–75</td><td>Ilmari, Rahu</td><td>Overworld &amp; plateau; watch hydration/aggro</td></tr>
+          <tr><td>70–80</td><td>Gazluk, Fae Realm</td><td>Harsh climates / alternate realm</td></tr>
+          <tr><td>75–85</td><td>Povus</td><td>Endgame-level zone</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    window.addEventListener("contextmenu", (e) => e.preventDefault());
+    window.addEventListener("load", () => document.body.focus());
+    window.addEventListener("focus", () => document.body.focus());
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") window.api.closeOverlay();
+    });
+  </script>
+</body>
+</html>

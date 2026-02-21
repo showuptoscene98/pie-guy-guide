@@ -362,6 +362,23 @@ function setupLevelingAccordion() {
   });
 }
 
+// Leveling area dropdowns: show the selected area content in each bracket
+function setupLevelingAreaDropdowns() {
+  document.querySelectorAll("#page-leveling .leveling-area-select").forEach((select) => {
+    const body = select.closest(".lvlBody");
+    if (!body) return;
+
+    function showArea(value) {
+      body.querySelectorAll(".leveling-area-content").forEach((el) => {
+        el.classList.toggle("active", el.getAttribute("data-area") === value);
+      });
+    }
+
+    showArea(select.value);
+    select.addEventListener("change", () => showArea(select.value));
+  });
+}
+
 // ——— Updater UI ———
 function setupUpdaterUI() {
   const banner = document.getElementById("updateBanner");
@@ -483,7 +500,7 @@ function setupPgNews() {
       const details = document.createElement("details");
       details.className = "home-update-item";
       const summary = document.createElement("summary");
-      summary.textContent = u.date;
+      summary.textContent = "Patch notes · " + (u.date || "Unknown date");
       const bodyEl = document.createElement("div");
       bodyEl.className = "home-update-body";
       const rawBody = (u.body || "").trim();
@@ -492,14 +509,23 @@ function setupPgNews() {
         paragraphs.forEach((para) => {
           const trimmed = para.replace(/\s+/g, " ").trim();
           if (!trimmed) return;
-          const segments = trimmed.split(/\s+-\s+/);
-          segments.forEach((seg, i) => {
-            const text = seg.trim();
-            if (!text) return;
+          const bulletLike = trimmed.split(/\s+-\s+/);
+          const isList = bulletLike.length > 1 && bulletLike.every((s) => s.length < 200);
+          if (isList) {
+            const ul = document.createElement("ul");
+            bulletLike.forEach((seg) => {
+              const text = seg.trim();
+              if (!text) return;
+              const li = document.createElement("li");
+              li.textContent = text;
+              ul.appendChild(li);
+            });
+            bodyEl.appendChild(ul);
+          } else {
             const p = document.createElement("p");
-            p.textContent = text;
+            p.textContent = trimmed;
             bodyEl.appendChild(p);
-          });
+          }
         });
       }
       details.appendChild(summary);
@@ -618,6 +644,7 @@ function setupWikiSearch() {
 // run after DOM loads
 window.addEventListener("DOMContentLoaded", () => {
   setupLevelingAccordion();
+  setupLevelingAreaDropdowns();
   setupUpdaterUI();
   setupPgNews();
   setupWikiSearch();

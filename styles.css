@@ -810,6 +810,10 @@ p, li{
   font-weight:600;
   color:var(--text);
 }
+.home-updates-patch-subtitle{
+  margin:-6px 0 12px;
+  font-size:12px;
+}
 .home-updates-head{
   display:flex;
   align-items:center;
@@ -860,8 +864,96 @@ p, li{
   margin:0 0 0.75em;
 }
 .home-update-body p:last-child{ margin-bottom:0; }
+.home-update-body ul{
+  margin:0 0 0.75em;
+  padding-left:1.25em;
+}
+.home-update-body ul:last-child{ margin-bottom:0; }
+.home-update-body li{ margin-bottom:0.25em; }
+.home-update-body li:last-child{ margin-bottom:0; }
 
 /* ================= LEVELING (DETAILS) ================= */
+
+.leveling-header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+  margin-bottom:20px;
+  flex-wrap:wrap;
+}
+.leveling-header-text{ flex:1; min-width:0; }
+.leveling-header-text h1{ margin-bottom:4px; }
+.leveling-header-text .muted{ margin:0; }
+.leveling-quick-ref-btn{
+  flex-shrink:0;
+  padding:8px 14px;
+  font-size:13px;
+}
+
+.leveling-tips{
+  margin-bottom:20px;
+  padding:14px 18px;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:12px;
+  max-width:900px;
+}
+.leveling-tips h2{
+  margin:0 0 10px;
+  font-size:1rem;
+  color:var(--gold);
+}
+.leveling-tips ul{
+  margin:0;
+  padding-left:1.4em;
+  color:var(--muted);
+  line-height:1.55;
+}
+.leveling-tips li{ margin-bottom:6px; }
+.leveling-tips li:last-child{ margin-bottom:0; }
+
+.leveling-area-dropdown-wrap{
+  margin-bottom:12px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.leveling-area-label{
+  font-size:12px;
+  font-weight:600;
+  color:var(--muted);
+  white-space:nowrap;
+}
+.leveling-area-select{
+  min-width:200px;
+  padding:6px 10px;
+  font-size:13px;
+  background:var(--contentGrey2);
+  border:1px solid rgba(255,255,255,0.15);
+  border-radius:8px;
+  color:var(--text);
+  cursor:pointer;
+}
+.leveling-area-content{
+  display:none;
+  margin-top:0;
+}
+.leveling-area-content.active{
+  display:block;
+}
+.leveling-area-content p{ margin:0; }
+.leveling-area-content p + p{ margin-top:10px; }
+
+kbd{
+  padding:2px 6px;
+  font-size:11px;
+  font-family:inherit;
+  background:rgba(255,255,255,0.12);
+  border:1px solid rgba(255,255,255,0.2);
+  border-radius:4px;
+  color:var(--text);
+}
 
 .leveling{
   display:flex;

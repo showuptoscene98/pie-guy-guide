@@ -27,6 +27,19 @@ if (!gotLock) {
 const PG_NEWS_URL = "https://cdn.projectgorgon.com/news.txt";
 const PG_NEWS_MAX_ITEMS = 6;
 
+function decodeHtmlEntities(str) {
+  if (!str || typeof str !== "string") return str;
+  return str
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(parseInt(n, 10)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCharCode(parseInt(n, 16)));
+}
+
 function fetchProjectGorgonNews() {
   return new Promise((resolve) => {
     const url = `${PG_NEWS_URL}?t=${Date.now()}`;
@@ -72,7 +85,9 @@ function parsePgNews(raw) {
       .replace(/\n\s*\n/g, PARA);
     body = body.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
     body = body.split(PARA).join("\n\n").replace(/(\n\n)+/g, "\n\n").trim();
-    const date = dateLine.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+    let date = dateLine.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+    date = decodeHtmlEntities(date);
+    body = decodeHtmlEntities(body);
     if (date && date.length < 80) updates.push({ date, body });
   }
   return updates.slice(0, PG_NEWS_MAX_ITEMS);
@@ -94,12 +109,13 @@ let mainWindow = null;
 let appTray = null;
 let mapWindow = null;
 let dungeonWindow = null;
+let levelingQuickRefWindow = null;
 let mapClickthrough = false;
 let dungeonClickthrough = false;
 let wikiWindow = null;
 let currentOpacity = 1;
 let overlayAnchorTopRight = true;
-let overlayTitleBarVisible = true;
+let overlayTitleBarVisible = true; // default: full UI visible; F6 toggles to map-only with draggable strip
 let themePreference = "dark-red";
 let currentMapZone = "";
 let currentDungeonZone = "";
@@ -263,6 +279,54 @@ function createOverlayWindow(file) {
       win.webContents.send("overlay:titleBarVisible", overlayTitleBarVisible);
       if (file === "map.html") win.webContents.send("overlay:currentMapZone", currentMapZone);
       if (file === "dungeon.html") win.webContents.send("overlay:currentDungeonZone", currentDungeonZone);
+      win.show();
+      win.focus();
+    }
+  });
+  return win;
+}
+
+const QUICKREF_DEFAULT_W = 520;
+const QUICKREF_DEFAULT_H = 520;
+const QUICKREF_MIN_W = 380;
+const QUICKREF_MIN_H = 400;
+
+function createLevelingQuickRefWindow() {
+  const opts = {
+    width: QUICKREF_DEFAULT_W,
+    height: QUICKREF_DEFAULT_H,
+    minWidth: QUICKREF_MIN_W,
+    minHeight: QUICKREF_MIN_H,
+    frame: false,
+    thickFrame: false,
+    show: false,
+    transparent: false,
+    backgroundColor: "#1a1a1a",
+    alwaysOnTop: true,
+    webPreferences: {
+      preload: path.join(__dirname, "preload.js"),
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  };
+  if (overlayAnchorTopRight) {
+    try {
+      const primary = screen.getPrimaryDisplay();
+      const work = primary.workArea ?? primary.bounds;
+      opts.x = Math.round(work.x + work.width - QUICKREF_DEFAULT_W - ANCHOR_OFFSET_PX);
+      opts.y = Math.round(work.y + ANCHOR_OFFSET_PX);
+    } catch (_) {
+      opts.x = 0;
+      opts.y = 0;
+    }
+  } else {
+    opts.center = true;
+  }
+  const win = new BrowserWindow(opts);
+  win.setAlwaysOnTop(true, "screen-saver");
+  const filePath = path.join(__dirname, "leveling-quickref.html");
+  win.loadFile(filePath).catch(() => {}).finally(() => {
+    if (!win.isDestroyed()) {
       win.show();
       win.focus();
     }
@@ -521,6 +585,27 @@ ipcMain.on("overlay:openDungeon", () => {
     });
   } catch (e) {
     console.error("overlay:openDungeon", e);
+  }
+});
+
+// Leveling quick reference: popout window (opaque, like map/dungeon flow)
+ipcMain.on("overlay:openLevelingQuickRef", () => {
+  try {
+    if (levelingQuickRefWindow && !levelingQuickRefWindow.isDestroyed()) {
+      levelingQuickRefWindow.show();
+      levelingQuickRefWindow.focus();
+      return;
+    }
+
+    if (mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible()) minimizeMainToTray();
+
+    levelingQuickRefWindow = createLevelingQuickRefWindow();
+    levelingQuickRefWindow.on("closed", () => {
+      levelingQuickRefWindow = null;
+      restoreMainIfMinimized();
+    });
+  } catch (e) {
+    console.error("overlay:openLevelingQuickRef", e);
   }
 });
 

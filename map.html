@@ -203,8 +203,40 @@
     user-select: none;
   }
 
+  /* Map-only mode (F6): show "Map only" strip (draggable), hide full title bar and sidebar */
+  .map-only-bar {
+    display: none;
+    height: 28px;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: rgba(255,255,255,0.9);
+    text-shadow: 0 0 4px #000, 0 1px 2px #000;
+    -webkit-app-region: drag;
+    user-select: none;
+  }
   body.titlebar-transparent .titlebar {
+    height: 28px;
+    min-height: 28px;
+    padding: 0;
     background: transparent;
+    justify-content: center;
+  }
+  body.titlebar-transparent .titlebar .toprow {
+    display: none;
+  }
+  body.titlebar-transparent .titlebar .map-only-bar {
+    display: flex;
+  }
+  body.titlebar-transparent .map-layout {
+    height: calc(100vh - 28px);
+  }
+  body.titlebar-transparent .map-sidebar {
+    width: 0;
+    min-width: 0;
+    padding: 0;
+    overflow: hidden;
+    border: none;
   }
   body.titlebar-transparent .titlebar .toprow > div:first-child > div:first-child,
   body.titlebar-transparent .titlebar .hint,
@@ -217,10 +249,11 @@
 <body tabindex="0">
 
 <div class="titlebar">
+  <div class="map-only-bar" aria-hidden="true">Map only</div>
   <div class="toprow">
     <div>
       <div style="font-weight:900;">Maps</div>
-      <div class="hint">Drag to pan • Mouse wheel zooms • ESC closes • F6 title bar • F8 click-through</div>
+      <div class="hint">Drag to pan • Mouse wheel zooms • ESC closes • F6 show map selection &amp; window • F8 click-through</div>
     </div>
     <div class="clickthrough-wrap">
       <input type="checkbox" id="clickthroughCheck" />
@@ -235,6 +268,9 @@
     <div>
       <label for="mapSelect">Map</label>
       <select id="mapSelect" aria-label="Select map"></select>
+    </div>
+    <div>
+      <button type="button" class="btn" id="setCurrentZoneBtn" style="width:100%;">Set as current zone</button>
     </div>
     <div class="map-opacity-wrap">
       <label for="mapOpacitySlider">Opacity</label>
@@ -352,6 +388,13 @@
 
   mapSelect.addEventListener("change", () => loadMap(mapSelect.value));
 
+  const setCurrentZoneBtn = document.getElementById("setCurrentZoneBtn");
+  if (setCurrentZoneBtn && window.api?.setCurrentMapZone) {
+    setCurrentZoneBtn.addEventListener("click", () => {
+      window.api.setCurrentMapZone(mapSelect.value);
+    });
+  }
+
   // Opacity slider
   if (mapOpacitySlider && window.api && window.api.setOverlayOpacity) {
     mapOpacitySlider.addEventListener("input", () => {
@@ -381,7 +424,9 @@
 
   function updatePlayerIconVisibility() {
     if (!playerIcon) return;
-    const show = currentMapZoneFromApp && mapSelect.value === currentMapZoneFromApp;
+    const zoneMatch = currentMapZoneFromApp && mapSelect.value === currentMapZoneFromApp;
+    const trackingOn = minimapTrackCheck && minimapTrackCheck.checked;
+    const show = zoneMatch || trackingOn;
     playerIcon.classList.toggle("hidden", !show);
     if (show) applyPlayerIconPosition();
   }
@@ -491,6 +536,7 @@
     if (minimapVideo && minimapVideo.srcObject) {
       minimapVideo.srcObject = null;
     }
+    updatePlayerIconVisibility();
   }
 
   function grayscaleSample(ctx, x, y, w, h) {
@@ -503,7 +549,7 @@
   }
 
   function runMinimapTrack() {
-    if (!minimapVideo || !mapImage.complete || !mapImage.naturalWidth || mapSelect.value !== currentMapZoneFromApp) return;
+    if (!minimapVideo || !mapImage.complete || !mapImage.naturalWidth) return;
     const vw = minimapVideo.videoWidth;
     const vh = minimapVideo.videoHeight;
     if (!vw || !vh) return;
@@ -552,6 +598,8 @@
         }
       }
     }
+    const maxSad = MINIMAP_PATCH * MINIMAP_PATCH * 0.7;
+    if (bestSad >= maxSad) return;
     const centerX = (bestSx + MINIMAP_PATCH / 2) / MAP_DOWNSCALE;
     const centerY = (bestSy + MINIMAP_PATCH / 2) / mapSmallH;
     playerIconNorm.x = centerX;
@@ -561,25 +609,40 @@
 
   async function startMinimapTracking() {
     stopMinimapTracking();
-    if (!window.api?.getGameWindowSourceId) return;
-    const result = await window.api.getGameWindowSourceId();
-    if (!result || !result.sourceId) return;
+    minimapVideo = document.createElement("video");
+    minimapVideo.autoplay = true;
+    minimapVideo.muted = true;
+    minimapVideo.playsInline = true;
+    minimapVideo.style.cssText = "position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;";
+    document.body.appendChild(minimapVideo);
+    let stream = null;
     try {
-      minimapVideo = document.createElement("video");
-      minimapVideo.autoplay = true;
-      minimapVideo.muted = true;
-      minimapVideo.playsInline = true;
-      minimapVideo.style.cssText = "position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;";
-      document.body.appendChild(minimapVideo);
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: false,
-        video: {
-          mandatory: {
-            chromeMediaSource: "desktop",
-            chromeMediaSourceId: result.sourceId
-          }
+      if (window.api?.getGameWindowSourceId) {
+        const result = await window.api.getGameWindowSourceId();
+        if (result?.sourceId) {
+          stream = await navigator.mediaDevices.getUserMedia({
+            audio: false,
+            video: {
+              mandatory: {
+                chromeMediaSource: "desktop",
+                chromeMediaSourceId: result.sourceId
+              }
+            }
+          });
         }
-      });
+      }
+      if (!stream && typeof navigator.mediaDevices.getDisplayMedia === "function") {
+        stream = await navigator.mediaDevices.getDisplayMedia({
+          audio: false,
+          video: { displaySurface: "window" }
+        });
+      }
+      if (!stream) {
+        console.warn("Minimap tracking: no capture source. Start Project Gorgon and try again, or use Track from game minimap to pick the window.");
+        minimapVideo.remove();
+        minimapVideo = null;
+        return;
+      }
       minimapStream = stream;
       minimapVideo.srcObject = stream;
       await new Promise((resolve, reject) => {
@@ -588,8 +651,12 @@
         if (minimapVideo.readyState >= 1) resolve();
       });
       minimapTrackInterval = setInterval(runMinimapTrack, 800);
+      updatePlayerIconVisibility();
+      runMinimapTrack();
     } catch (err) {
       console.warn("Minimap tracking failed:", err);
+      if (minimapVideo && minimapVideo.parentNode) minimapVideo.remove();
+      minimapVideo = null;
       stopMinimapTracking();
     }
   }

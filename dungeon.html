@@ -200,8 +200,40 @@
     user-select: none;
   }
 
+  /* Map-only mode (F6): show "Dungeon only" strip (draggable), hide full title bar and sidebar */
+  .dungeon-only-bar {
+    display: none;
+    height: 28px;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: rgba(255,255,255,0.9);
+    text-shadow: 0 0 4px #000, 0 1px 2px #000;
+    -webkit-app-region: drag;
+    user-select: none;
+  }
   body.titlebar-transparent .titlebar {
+    height: 28px;
+    min-height: 28px;
+    padding: 0;
     background: transparent;
+    justify-content: center;
+  }
+  body.titlebar-transparent .titlebar .toprow {
+    display: none;
+  }
+  body.titlebar-transparent .titlebar .dungeon-only-bar {
+    display: flex;
+  }
+  body.titlebar-transparent .dungeon-layout {
+    height: calc(100vh - 28px);
+  }
+  body.titlebar-transparent .dungeon-sidebar {
+    width: 0;
+    min-width: 0;
+    padding: 0;
+    overflow: hidden;
+    border: none;
   }
   body.titlebar-transparent .titlebar .toprow > div:first-child > div:first-child,
   body.titlebar-transparent .titlebar .hint,
@@ -214,10 +246,11 @@
 <body tabindex="0">
 
 <div class="titlebar">
+  <div class="dungeon-only-bar" aria-hidden="true">Dungeon only</div>
   <div class="toprow">
     <div>
       <div style="font-weight:900;">Dungeons</div>
-      <div class="hint">Drag to pan • Mouse wheel zooms • ESC closes • F6 title bar • F8 click-through</div>
+      <div class="hint">Drag to pan • Mouse wheel zooms • ESC closes • F6 show dungeon selection &amp; window • F8 click-through</div>
     </div>
     <div class="clickthrough-wrap">
       <input type="checkbox" id="clickthroughCheck" />
@@ -232,6 +265,9 @@
     <div>
       <label for="dungeonSelect">Dungeon</label>
       <select id="dungeonSelect" aria-label="Select dungeon"></select>
+    </div>
+    <div>
+      <button type="button" class="btn" id="setCurrentDungeonBtn" style="width:100%;">Set as current dungeon</button>
     </div>
     <div class="dungeon-opacity-wrap">
       <label for="dungeonOpacitySlider">Opacity</label>
@@ -340,6 +376,13 @@
   });
 
   dungeonSelect.addEventListener("change", () => loadDungeon(dungeonSelect.value));
+
+  const setCurrentDungeonBtn = document.getElementById("setCurrentDungeonBtn");
+  if (setCurrentDungeonBtn && window.api?.setCurrentDungeonZone) {
+    setCurrentDungeonBtn.addEventListener("click", () => {
+      window.api.setCurrentDungeonZone(dungeonSelect.value);
+    });
+  }
 
   if (dungeonOpacitySlider && window.api && window.api.setOverlayOpacity) {
     dungeonOpacitySlider.addEventListener("input", () => {

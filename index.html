@@ -111,7 +111,7 @@
           <div class="hotkeys">
             <div class="hotkeys-title">Hotkeys</div>
             <div>F7: Minimize/Restore</div>
-            <div>Overlay: ESC closes, F6 title bar, F8 click-through</div>
+            <div>Overlay: ESC closes, F6 show selection &amp; window, F8 click-through</div>
           </div>
         </div>
       </aside>
@@ -126,6 +126,7 @@
               <img src="assets/logo.png" alt="Pie Guy" class="home-updates-logo" />
               <h2 class="home-updates-patch-title">Patch notes</h2>
             </div>
+            <p class="home-updates-patch-subtitle muted">Project Gorgon update notes — expand an entry to read.</p>
             <div class="home-updates-head">
               <button type="button" class="primary home-updates-refresh" id="pgNewsRefresh">Refresh</button>
             </div>
@@ -164,63 +165,155 @@
         </section>
 
 <section class="page" id="page-leveling">
-  <h1>Leveling Guide</h1>
-  <p class="muted">Broken down by level brackets. Open a section to read the route.</p>
+  <div class="leveling-header">
+    <div class="leveling-header-text">
+      <h1>Leveling Guide</h1>
+      <p class="muted">Best areas by level bracket. Expand a bracket to read details; use the quick reference for a summary.</p>
+    </div>
+    <button type="button" class="primary leveling-quick-ref-btn" onclick="window.api?.openLevelingQuickRef?.()" aria-label="Open quick reference in popout window">Quick reference</button>
+  </div>
 
-  <div class="leveling">
+  <div class="leveling-guide-body">
+    <div class="leveling-tips">
+      <h2>General tips</h2>
+      <ul>
+        <li>Fight mobs within about <strong>5 levels</strong> of your skill level for good XP.</li>
+        <li>Use <strong>both equipped combat skills</strong> at least once every 60 seconds to maximize gains.</li>
+        <li><strong>Bury corpses</strong> in busy areas (buy a shovel on the island); not burying is bad etiquette.</li>
+        <li>Focus on <strong>stackable, valuable drops</strong> (e.g. strange dirt, femurs, spider webs) when farming.</li>
+        <li>Kill <strong>silver crown mobs</strong> for kill quests and extra XP while you grind.</li>
+      </ul>
+    </div>
 
-    <details class="lvl" open>
-      <summary>0–10 (Anagoge)</summary>
-      <div class="lvlBody">
-        <p>I do not recommend leaving Angague until your combat skills are at least level 10. After level 5, you can easily move into the island's dungeon and down into the spider cave. The cave is huge, and it's a great place to grind. Don't bother picking up armor to later sell. Focus on things that stack and have value: strange dirt, femurs, and spider webs.</p>
-      </div>
-    </details>
+    <div class="leveling">
+      <details class="lvl" open>
+        <summary>0–10 — Anagoge Island</summary>
+        <div class="lvlBody">
+          <p>Stay on <strong>Anagoge Island</strong> until your combat skills are at least <strong>10</strong>. After level 5, use the island dungeon and the <strong>spider cave</strong> (large, excellent for grinding). Focus on stackables: strange dirt, femurs, spider webs.</p>
+        </div>
+      </details>
 
-    <details class="lvl">
-      <summary>5–15(Dream Ilamari Desert)</summary>
-      <div class="lvlBody">
-        <p><strong>5-15 only!</strong> Go to the gold portal right outside of Serbule Keep this will transport you to a nerfed Ilamari Desert. Speak with Mirravere to begin the quest and look out for mobs with a crown above their head for grind quest. This is fastest way for 5-15 on a beginner character</p>
+      <details class="lvl">
+        <summary>5–20 — Serbule &amp; Serbule Hills</summary>
+        <div class="lvlBody">
+          <div class="leveling-area-dropdown-wrap">
+            <label for="lvl-5-20-area" class="leveling-area-label">Area</label>
+            <select id="lvl-5-20-area" class="leveling-area-select" aria-label="Choose area">
+              <option value="hills">Serbule Hills</option>
+              <option value="crypt">Serbule Crypt</option>
+              <option value="sewers">Serbule Sewers</option>
+            </select>
+          </div>
+          <div class="leveling-area-content" data-area="hills">
+            <p><strong>5–10:</strong> Pigs east of Serbule, or Serbule Hills (spiders, pigs, sheep, goblins). At 10+ you can move more freely; avoid Renalon, farm goblins.</p>
+          </div>
+          <div class="leveling-area-content" data-area="crypt">
+            <p><strong>Serbule Crypt</strong> (SW of Serbule). Outdoor skeletons (e.g. archers) are easy. Indoors: spiders and harder undead up to ~20. The hallway with deer, ice elementals, and undead (between the giant undead boss and the rhino) is a strong grind spot with less traffic.</p>
+          </div>
+          <div class="leveling-area-content" data-area="sewers">
+            <p><strong>Serbule Sewers</strong> — viable for levels 5–15. Smaller than the crypt but good if you prefer this layout.</p>
+          </div>
+        </div>
+      </details>
 
-       </div>
-    </details>
+      <details class="lvl">
+        <summary>20–40 — Eltibule &amp; dungeons</summary>
+        <div class="lvlBody">
+          <div class="leveling-area-dropdown-wrap">
+            <label for="lvl-20-40-area" class="leveling-area-label">Area</label>
+            <select id="lvl-20-40-area" class="leveling-area-select" aria-label="Choose area">
+              <option value="eltibule">Eltibule</option>
+              <option value="myconian">Myconian Cave (25–30)</option>
+              <option value="goblin">Goblin Dungeon (30–45)</option>
+              <option value="sunvale">Sun Vale</option>
+            </select>
+          </div>
+          <div class="leveling-area-content" data-area="eltibule">
+            <p>From the drop, <strong>stay left</strong>. Wolves, panthers, green spiders, fire spiders (fire spiders can be tough at first). Good time to level mycology, myconic, and foraging. Watch for silver crown mobs for kill quests.</p>
+          </div>
+          <div class="leveling-area-content" data-area="myconian">
+            <p>Requires <strong>8 myconic</strong> (10 recommended). Enter via large mushrooms in northern Serbule (locations change every few hours). Avoid bosses without a group — their curses are harsh.</p>
+          </div>
+          <div class="leveling-area-content" data-area="goblin">
+            <p>One of the best dungeons: large, clear difficulty curve (easier up top, harder as you descend). Strong for 30–45. With a group that can handle the Fog: after the split go <strong>left</strong> to the three rooms with elementals and red crystals; <strong>leave the crystals alive</strong> for fast respawns and strong group XP.</p>
+          </div>
+          <div class="leveling-area-content" data-area="sunvale">
+            <p><strong>Sun Vale</strong> — island chain alternative for roughly 20–40 with multiple dungeon options.</p>
+          </div>
+        </div>
+      </details>
 
-    <details class="lvl">
-      <summary>15–20 (Serbule Crypt)</summary>
-      <div class="lvlBody">
+      <details class="lvl">
+        <summary>40–60 — Kur</summary>
+        <div class="lvlBody">
+          <div class="leveling-area-dropdown-wrap">
+            <label for="lvl-40-60-area" class="leveling-area-label">Area</label>
+            <select id="lvl-40-60-area" class="leveling-area-select" aria-label="Choose area">
+              <option value="tower">Kur Tower</option>
+              <option value="mountains">Kur Mountains (outdoor)</option>
+            </select>
+          </div>
+          <div class="leveling-area-content" data-area="tower">
+            <p><strong>Kur Tower</strong> — portal is a short run from the Kur portal drop in Eltibule. No cold damage inside; often has players for groups. One of the best 40–60 grinds.</p>
+          </div>
+          <div class="leveling-area-content" data-area="mountains">
+            <p><strong>Kur Mountains</strong> (outdoor) — roughly 35–50. Manage cold and body heat. Use when you want overworld variety.</p>
+          </div>
+        </div>
+      </details>
 
-        <p>After completing Dream Ilamari Desert until atleast level 12, you can move directly to the Serbule Crypt. It's SW of Serbule in the corner. If the dungeon itself is too hard for you, the area outdoors has a number of skeletons around that are easy targets. Archers are the easiest to kill.</p>
+      <details class="lvl">
+        <summary>60–70 — Wolf Cave</summary>
+        <div class="lvlBody">
+          <p><strong>Wolf Cave</strong> in Kur. Skin werewolves (keep a skinning knife) for solid income while leveling.</p>
+        </div>
+      </details>
 
-        <p><strong>@20</strong> Stay in Serbule Crypt. Spiders should be easy. Some of the harder undead should be just on the edge of your ability. Further down the undead hallway, between the giant undead boss and the rhino, is a hallway full of deer, ice elementals, and undead. This is a prime spot to grind since it doesn't have much foot traffic.</p>
-      </div>
-    </details>
+      <details class="lvl">
+        <summary>60–75 — Ilmari &amp; Rahu</summary>
+        <div class="lvlBody">
+          <div class="leveling-area-dropdown-wrap">
+            <label for="lvl-60-75-area" class="leveling-area-label">Area</label>
+            <select id="lvl-60-75-area" class="leveling-area-select" aria-label="Choose area">
+              <option value="ilmari">Ilmari</option>
+              <option value="rahu">Rahu</option>
+            </select>
+          </div>
+          <div class="leveling-area-content" data-area="ilmari">
+            <p><strong>Ilmari</strong> — desert; manage hydration (dehydration hurts power regen and sprint). Town: Amulna. Manticore Fields and ruined villages for harder fights.</p>
+          </div>
+          <div class="leveling-area-content" data-area="rahu">
+            <p><strong>Rahu</strong> — coastal town; plateau has high-level mobs and large aggro ranges. Come prepared.</p>
+          </div>
+        </div>
+      </details>
 
-    <details class="lvl">
-      <summary>20–40</summary>
-      <div class="lvlBody">
-        <p>It's time to head for Eltibule. Keep an eye out for mobs with a silver crown. If you're not familiar with the mechanic, killing such a mob will grant you a kill quest for similar mobs. They're good xp at lower levels, and you're going to grind this content anyway.</p>
+      <details class="lvl">
+        <summary>70–80 — Gazluk &amp; Fae Realm</summary>
+        <div class="lvlBody">
+          <div class="leveling-area-dropdown-wrap">
+            <label for="lvl-70-80-area" class="leveling-area-label">Area</label>
+            <select id="lvl-70-80-area" class="leveling-area-select" aria-label="Choose area">
+              <option value="gazluk">Gazluk</option>
+              <option value="fae">Fae Realm</option>
+            </select>
+          </div>
+          <div class="leveling-area-content" data-area="gazluk">
+            <p><strong>Gazluk</strong> — on Gazluk Plateau past Kur. Harsh climate; orcs and tough beasts. Roughly 70–75.</p>
+          </div>
+          <div class="leveling-area-content" data-area="fae">
+            <p><strong>Fae Realm</strong> — alternate realm via fairy nexuses. High-level option, roughly 70–80.</p>
+          </div>
+        </div>
+      </details>
 
-        <p>From the drop, stay to your left. This area is full of wolves, panthers, green spiders, and fire spiders. Fire spiders may be a bit too much for you at first, but you should be able to handle the rest. It's a perfect time to also work on your mycology, myconic, and foraging skills.</p>
-
-        <p><strong>@25 – 30 The Myconian Cave.</strong> You need a minimum of 8 myconic, and I recommend 10. It's time to go to the Myconian Cave. There are mushrooms distributed around northern Serbule that when talked to, will teleport you inside the dungeon. The location of these mushrooms changes every few hours, so it can take a little running around to locate them. Avoid the bosses unless you have a group. Their curses are particularly bad.</p>
-
-        <p><strong>@30 – 35 The Goblin Dungeon in Serbule.</strong> This is one of the greatest dungeons in the game. It's huge, and it's well-structured. Easier mobs are up top, but as you descend down you'll find that it gets more difficult. It's a perfect place to grind all the way from 40–45. If you have a group capable of defeating the Fog, venture further in and take a left when the path splits. You'll find a series of three rooms with elementals guarding red crystals. If you kill the crystals, then the elementals disappear and stop spawning. <strong>Do not kill the red crystals</strong> and you have a fast-spawning feed of high-xp mobs available for your group to farm.</p>
-      </div>
-    </details>
-
-    <details class="lvl">
-      <summary>40–60</summary>
-      <div class="lvlBody">
-        <p>It's time to go to Kur Tower. The portal is a short run from where the portal to Kur (in Eltibule) will drop you. If you die, that's fine, just try again. There's no cold damage inside. You can easily grind from 40–60 here, and there's often folks inside to group with.</p>
-      </div>
-    </details>
-
-    <details class="lvl">
-      <summary>60–70</summary>
-      <div class="lvlBody">
-        <p>You're almost there. It's time to grind out the last levels in the Wolf Cave, which is also located in Kur. You can make a good deal of money here by skinning the werewolves, so keep a skinning knife on you.</p>
-      </div>
-    </details>
-
+      <details class="lvl">
+        <summary>75–85 — Povus</summary>
+        <div class="lvlBody">
+          <p><strong>Povus</strong> — swamp merchant zone and one of the highest-level areas. Suited to 75–85 and endgame play.</p>
+        </div>
+      </details>
+    </div>
   </div>
 </section>
 
@@ -263,7 +356,7 @@
             <h2>Hotkeys</h2>
             <ul>
               <li><strong>F7</strong> — Minimize the main window to the tray, or restore it from the tray.</li>
-              <li><strong>F6</strong> — When a map or dungeon overlay is open: toggle the overlay title bar between visible (dark bar) and transparent (only text over the game).</li>
+              <li><strong>F6</strong> — When a map or dungeon overlay is open: toggle the overlay UI. By default only the map is shown; press F6 to show the map/dungeon dropdown, title bar, and Close button.</li>
               <li><strong>F8</strong> — When a map or dungeon overlay is open: toggle <em>click-through</em> so the overlay ignores the mouse and you can click the game underneath.</li>
               <li><strong>ESC</strong> — When a map or dungeon overlay is open: close the overlay and restore the main app window.</li>
             </ul>
@@ -299,19 +392,19 @@
               <li>Use the <strong>Opacity</strong> slider in the overlay to make the map image more or less see-through.</li>
               <li><strong>Drag</strong> the map to pan; use the <strong>mouse wheel</strong> to zoom in and out.</li>
               <li>Enable <strong>Click-through</strong> (or press <strong>F8</strong>) so you can click the game under the overlay.</li>
-              <li>Press <strong>F6</strong> to make the overlay title bar transparent so only the map image is visible over the game.</li>
+              <li>By default only the map image is visible. Press <strong>F6</strong> to show the map dropdown, opacity, and Close button.</li>
               <li>Press <strong>ESC</strong> to close the overlay and bring back the main app.</li>
             </ul>
           </div>
 
           <div class="instructions-block">
             <h2>Dungeons</h2>
-            <p>The Dungeons section works like Maps: click <strong>Open Dungeon Overlay</strong> to open a floating overlay with <strong>dungeon maps/layouts</strong>. Set <strong>Current dungeon (player location)</strong> on the Dungeons page to see a green <strong>player icon</strong> on that dungeon’s map when the overlay matches. You can switch dungeons from the dropdown, adjust opacity, drag to pan, and zoom with the mouse wheel. The same hotkeys apply: <strong>ESC</strong> to close, <strong>F6</strong> for title bar transparency, <strong>F8</strong> for click-through.</p>
+            <p>The Dungeons section works like Maps: click <strong>Open Dungeon Overlay</strong> to open a floating overlay with <strong>dungeon maps/layouts</strong>. Set <strong>Current dungeon (player location)</strong> on the Dungeons page to see a green <strong>player icon</strong> on that dungeon’s map when the overlay matches. You can switch dungeons from the dropdown, adjust opacity, drag to pan, and zoom with the mouse wheel. The same hotkeys apply: <strong>ESC</strong> to close, <strong>F6</strong> to show dungeon selection and window, <strong>F8</strong> for click-through.</p>
           </div>
 
           <div class="instructions-block">
             <h2>Leveling</h2>
-            <p>The Leveling Guide is a <strong>text guide</strong> with level brackets (e.g. 0–10, 15–20, 40–60). Click a bracket to expand it and read the recommended areas and tips for that range. Only one bracket is open at a time. Use it as a reference while leveling in Project Gorgon.</p>
+            <p>The Leveling Guide lists <strong>best areas to level</strong> in Project Gorgon by level bracket (0–10, 5–20, 20–40, and so on). Expand a bracket to read details. When a bracket has more than one area, use the <strong>Area</strong> dropdown to switch between options (e.g. Serbule Hills, Serbule Crypt, Goblin Dungeon). Click <strong>Quick reference</strong> at the top right to open the summary table in a <strong>popout window</strong> (like Maps or Dungeons), so you can keep it visible over the game. The main app minimizes to the tray while the quick reference window is open. Press <strong>ESC</strong> or click <strong>Close</strong> to close the popout.</p>
           </div>
 
           <div class="instructions-block">

@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld("api", {
   // Overlays
   openMap: () => ipcRenderer.send("overlay:openMap"),
   openDungeon: () => ipcRenderer.send("overlay:openDungeon"),
+  openLevelingQuickRef: () => ipcRenderer.send("overlay:openLevelingQuickRef"),
   closeOverlay: () => ipcRenderer.send("overlay:close"),
   setOverlaySize: (width, height) => ipcRenderer.send("overlay:setSize", width, height),
   setOverlayOpacity: (value) => ipcRenderer.send("overlay:setOpacity", value),
