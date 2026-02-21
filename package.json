@@ -1,6 +1,6 @@
 {
   "name": "pie-guy-guide",
-  "version": "3.1.28",
+  "version": "3.1.29",
   "description": "Pie Guy - Project Gorgon Guide",
   "main": "main.js",
   "author": "Mewoicles",
@@ -53,6 +53,10 @@
       {
         "from": "maps",
         "to": "maps"
+      },
+      {
+        "from": "dungeons",
+        "to": "dungeons"
       }
     ],
     "publish": [
