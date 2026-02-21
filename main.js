@@ -29,7 +29,8 @@ const PG_NEWS_MAX_ITEMS = 6;
 
 function fetchProjectGorgonNews() {
   return new Promise((resolve) => {
-    const req = https.get(PG_NEWS_URL, { timeout: 15000 }, (res) => {
+    const url = `${PG_NEWS_URL}?t=${Date.now()}`;
+    const req = https.get(url, { timeout: 15000, headers: { "Cache-Control": "no-cache", Pragma: "no-cache" } }, (res) => {
       if (res.statusCode !== 200) {
         resolve({ error: "Failed to load news", updates: [] });
         return;

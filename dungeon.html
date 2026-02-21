@@ -296,8 +296,11 @@
     "Wolf Cave",
     "Yeti Cave",
     "Myconian Cave",
-    "Labyrinth Map"
+    "Labyrinth Map",
+    "Dark Chapel"
   ];
+  // Dungeons that use a different filename or extension (display name -> file path under dungeons/)
+  const dungeonImageFiles = { "Dark Chapel": "Dark_Chapel.png" };
 
   const DUNGEON_SIDEBAR_WIDTH = 160;
 
@@ -323,7 +326,8 @@
       }
       loadPlayerIconPosition();
     };
-    dungeonImage.src = `dungeons/${name}.jpg`;
+    const file = dungeonImageFiles[name] || `${name}.jpg`;
+    dungeonImage.src = `dungeons/${file}`;
     scale = 0.8; x = 40; y = 40;
     applyTransform();
   }

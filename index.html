@@ -76,13 +76,23 @@
             <span class="label">Leveling</span>
           </button>
 
+          <button class="navBtn" id="navBossTimer" onclick="go('boss-timer')">
+            <img class="icon" src="assets/icons/Boss_Timer.png" alt="" draggable="false" />
+            <span class="label">Boss Timer</span>
+          </button>
+
+          <button class="navBtn" id="navCasinoDaily" onclick="go('casino-daily')">
+            <img class="icon" src="assets/icons/Casino_Daily.png" alt="" draggable="false" />
+            <span class="label">Casino Daily</span>
+          </button>
+
           <button class="navBtn" id="navTips" onclick="go('tips')">
             <img class="icon" src="assets/icons/tips.png" alt="" draggable="false" />
             <span class="label">Tips</span>
           </button>
 
           <button class="navBtn" id="navInstructions" onclick="go('instructions')">
-            <img class="icon" src="assets/icons/about.png" alt="" draggable="false" />
+            <img class="icon" src="assets/icons/Instructions.png" alt="" draggable="false" />
             <span class="label">Instructions</span>
           </button>
 
@@ -214,6 +224,21 @@
   </div>
 </section>
 
+        <section class="page" id="page-boss-timer">
+          <h1>Boss Timer</h1>
+          <p>Track when bosses respawn. Click <strong>Killed</strong> when you or your group kill a boss to start the timer.</p>
+          <div class="boss-timer-list" id="bossTimerList"></div>
+          <p class="muted" style="margin-top:12px;">Timers are saved locally. Respawn times are estimates; adjust in the dropdown if you know a different value.</p>
+        </section>
+
+        <section class="page" id="page-casino-daily">
+          <h1>Casino Daily</h1>
+          <p>The casino daily dungeon rotates at <strong>11pm CST</strong> every day.</p>
+          <div class="casino-daily-box" id="casinoDailyBox">
+            <div class="casino-daily-dungeon" id="casinoDailyDungeon">—</div>
+            <div class="casino-daily-next" id="casinoDailyNext"></div>
+          </div>
+        </section>
 
         <section class="page" id="page-tips">
           <h1>Tips</h1>
@@ -230,7 +255,7 @@
 
           <div class="instructions-block">
             <h2>Getting started</h2>
-            <p>After opening the app, the main window stays on top of other windows so you can keep it beside the game. You can <strong>drag the window</strong> by the top bar (where the title and search box are). Use the <strong>sidebar on the left</strong> to open different sections: Home, Maps, Dungeons, Leveling, Tips, and About.</p>
+            <p>After opening the app, the main window stays on top of other windows so you can keep it beside the game. You can <strong>drag the window</strong> by the top bar (where the title and search box are). Use the <strong>sidebar on the left</strong> to open different sections: Home, Maps, Dungeons, Leveling, Boss Timer, Casino Daily, Tips, and About.</p>
             <p>At the bottom of the sidebar you can adjust <strong>Opacity</strong> for the whole app (and any open overlay). Use the <strong>—</strong> button in the top-right to minimize the app to the system tray; click the tray icon to restore it.</p>
           </div>
 
@@ -287,6 +312,11 @@
           <div class="instructions-block">
             <h2>Leveling</h2>
             <p>The Leveling Guide is a <strong>text guide</strong> with level brackets (e.g. 0–10, 15–20, 40–60). Click a bracket to expand it and read the recommended areas and tips for that range. Only one bracket is open at a time. Use it as a reference while leveling in Project Gorgon.</p>
+          </div>
+
+          <div class="instructions-block">
+            <h2>Boss Timer</h2>
+            <p>Track when bosses respawn. Open the <strong>Boss Timer</strong> section from the sidebar. When you or your group kill a boss, click <strong>Killed</strong> for that boss to start the timer. The countdown uses the respawn time you select (e.g. 2 hours). Timers are saved locally and persist across sessions. Respawn times are estimates; use the dropdown to change them if you know a different value.</p>
           </div>
 
           <div class="instructions-block">

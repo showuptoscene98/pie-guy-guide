@@ -22,6 +22,8 @@ function go(name) {
     maps: "navMaps",
     dungeons: "navDungeons",
     leveling: "navLeveling",
+    "boss-timer": "navBossTimer",
+    "casino-daily": "navCasinoDaily",
     tips: "navTips",
     instructions: "navInstructions",
     about: "navAbout"
@@ -121,7 +123,7 @@ const MAP_ZONES = [
 ];
 const DUNGEON_ZONES = [
   "Goblin Dungeon Lower", "Goblin Dungeon Upper", "Kur Tower", "Rahu Sewer",
-  "Serbule Crypt", "Wolf Cave", "Yeti Cave", "Myconian Cave", "Labyrinth Map"
+  "Serbule Crypt", "Wolf Cave", "Yeti Cave", "Myconian Cave", "Labyrinth Map", "Dark Chapel"
 ];
 
 function setupZoneSelects() {
@@ -171,6 +173,177 @@ function setupZoneSelects() {
 }
 
 setupZoneSelects();
+
+// ——— Boss Timer ———
+const BOSS_TIMER_STORAGE_KEY = "pieguy-boss-timers";
+const BOSS_TIMER_LIST = [
+  { id: "serbule-crypt", name: "Serbule Crypt", defaultRespawnMinutes: 5 },
+  { id: "goblin-dungeon", name: "Goblin Dungeon", defaultRespawnMinutes: 5 },
+  { id: "kur-tower", name: "Kur Tower", defaultRespawnMinutes: 5 },
+  { id: "wolf-cave", name: "Wolf Cave", defaultRespawnMinutes: 5 },
+  { id: "myconian-cave", name: "Myconian Cave", defaultRespawnMinutes: 5 },
+  { id: "world-eltibule", name: "World Boss (Eltibule)", defaultRespawnMinutes: 5 },
+  { id: "world-gazluk", name: "World Boss (Gazluk)", defaultRespawnMinutes: 5 },
+  { id: "other", name: "Other / Custom", defaultRespawnMinutes: 5 }
+];
+const RESPAWN_OPTIONS = [5, 30, 60, 90, 120, 180, 240, 360];
+
+function setupBossTimer() {
+  const container = document.getElementById("bossTimerList");
+  if (!container) return;
+
+  function loadTimers() {
+    try {
+      const raw = localStorage.getItem(BOSS_TIMER_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch (_) {
+      return {};
+    }
+  }
+  function saveTimers(timers) {
+    try {
+      localStorage.setItem(BOSS_TIMER_STORAGE_KEY, JSON.stringify(timers));
+    } catch (_) {}
+  }
+
+  function formatCountdown(ms) {
+    if (ms <= 0) return "Available now";
+    const s = Math.floor(ms / 1000) % 60;
+    const m = Math.floor(ms / 60000) % 60;
+    const h = Math.floor(ms / 3600000);
+    if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+    return `${m}:${String(s).padStart(2, "0")}`;
+  }
+
+  const timers = loadTimers();
+  const rows = [];
+
+  BOSS_TIMER_LIST.forEach((boss) => {
+    const row = document.createElement("div");
+    row.className = "boss-timer-row";
+    row.dataset.bossId = boss.id;
+    const respawnMin = RESPAWN_OPTIONS.includes(boss.defaultRespawnMinutes) ? boss.defaultRespawnMinutes : 5;
+    const select = document.createElement("select");
+    select.className = "boss-timer-respawn";
+    select.title = "Respawn time (minutes)";
+    RESPAWN_OPTIONS.forEach((min) => {
+      const opt = document.createElement("option");
+      opt.value = min;
+      opt.textContent = min === 5 ? "5 min" : min === 60 ? "1 hour" : min === 120 ? "2 hours" : min === 180 ? "3 hours" : min === 240 ? "4 hours" : min === 360 ? "6 hours" : `${min} min`;
+      select.appendChild(opt);
+    });
+    select.value = String(respawnMin);
+    const label = document.createElement("span");
+    label.className = "boss-timer-name";
+    label.textContent = boss.name;
+    const status = document.createElement("span");
+    status.className = "boss-timer-status";
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btn boss-timer-btn";
+    btn.textContent = "Killed";
+    btn.addEventListener("click", () => {
+      timers[boss.id] = Date.now();
+      saveTimers(timers);
+    });
+    row.appendChild(label);
+    row.appendChild(select);
+    row.appendChild(status);
+    row.appendChild(btn);
+    container.appendChild(row);
+    rows.push({ row, status, select, bossId: boss.id });
+  });
+
+  function tick() {
+    const now = Date.now();
+    rows.forEach(({ status, select, bossId }) => {
+      const killedAt = timers[bossId];
+      const respawnMs = Number(select.value) * 60 * 1000;
+      if (!killedAt) {
+        status.textContent = "—";
+        status.classList.remove("available");
+        return;
+      }
+      const elapsed = now - killedAt;
+      const remaining = respawnMs - elapsed;
+      if (remaining <= 0) {
+        status.textContent = "Available now";
+        status.classList.add("available");
+      } else {
+        status.textContent = "Respawns in " + formatCountdown(remaining);
+        status.classList.remove("available");
+      }
+    });
+  }
+  tick();
+  setInterval(tick, 1000);
+}
+
+setupBossTimer();
+
+// ——— Casino Daily (rotates 11pm CST: Yeti Caves → Wolf Caves → Dark Chapel → Winter Nexus) ———
+const CASINO_DAILY_DUNGEONS = ["Yeti Caves", "Wolf Caves", "Dark Chapel", "Winter Nexus"];
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+// 11pm CST = 05:00 UTC next calendar day; current casino day starts at most recent 05:00 UTC
+
+function getStartOfCurrentCasinoDay() {
+  const now = new Date();
+  const y = now.getUTCFullYear();
+  const m = now.getUTCMonth();
+  const d = now.getUTCDate();
+  let start = new Date(Date.UTC(y, m, d, 5, 0, 0, 0));
+  if (start.getTime() > now.getTime()) start = new Date(Date.UTC(y, m, d - 1, 5, 0, 0, 0));
+  return start.getTime();
+}
+
+function getCasinoDailyIndex() {
+  const ref = getStartOfCurrentCasinoDay();
+  const period = Math.floor((Date.now() - ref) / MS_PER_DAY);
+  // Current period (0) = Dark Chapel (index 2), then Winter Nexus, Yeti Caves, Wolf Caves
+  return ((2 + period) % 4 + 4) % 4;
+}
+
+function getNextCasinoDailyRotation() {
+  const now = new Date();
+  const y = now.getUTCFullYear();
+  const m = now.getUTCMonth();
+  const d = now.getUTCDate();
+  const h = now.getUTCHours();
+  // 11pm CST = 05:00 UTC next calendar day
+  let next = new Date(Date.UTC(y, m, d, 5, 0, 0, 0));
+  if (next.getTime() <= now.getTime()) next = new Date(Date.UTC(y, m, d + 1, 5, 0, 0, 0));
+  return next;
+}
+
+function formatTimeUntil(ms) {
+  if (ms <= 0) return "now";
+  const s = Math.floor(ms / 1000) % 60;
+  const m = Math.floor(ms / 60000) % 60;
+  const h = Math.floor(ms / 3600000);
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+
+function updateCasinoDailyUI() {
+  const dungeonEl = document.getElementById("casinoDailyDungeon");
+  const nextEl = document.getElementById("casinoDailyNext");
+  if (!dungeonEl) return;
+  const index = getCasinoDailyIndex();
+  dungeonEl.textContent = "Today: " + CASINO_DAILY_DUNGEONS[index];
+  if (nextEl) {
+    const next = getNextCasinoDailyRotation();
+    const ms = next.getTime() - Date.now();
+    nextEl.textContent = "Next rotation: " + formatTimeUntil(ms) + " (11pm CST)";
+  }
+}
+
+function setupCasinoDaily() {
+  updateCasinoDailyUI();
+  setInterval(updateCasinoDailyUI, 1000);
+}
+
+setupCasinoDaily();
 
 // Leveling accordion: only one bracket open at a time
 function setupLevelingAccordion() {
