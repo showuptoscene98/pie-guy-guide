@@ -272,7 +272,8 @@ app.post("/api/posts/:id/comments", async (req, res) => {
 });
 
 app.get("/api/health", (req, res) => res.json({ ok: true }));
+app.get("/", (req, res) => res.redirect(302, "/api/health"));
 
-app.listen(PORT, () => {
-  console.log("LFG API (Supabase) running at http://localhost:" + PORT);
+app.listen(Number(PORT), "0.0.0.0", () => {
+  console.log("LFG API (Supabase) running on port " + PORT);
 });
