@@ -857,6 +857,8 @@ p, li{
 }
 .aboutVersion{ color:var(--muted); font-size:13px; }
 .aboutCheckBtn{ padding:8px 14px; font-size:13px; }
+.aboutReleasesNote{ margin-top:12px; font-size:12px; }
+.aboutReleasesNote a{ color:var(--accent); }
 
 /* ================= HOME – PROJECT GORGON UPDATES ================= */
 .home-updates{
@@ -1108,3 +1110,28 @@ kbd{
 .tips-dropdown .lvlBody p:first-of-type{
   margin-top: 0;
 }
+
+.tips-npc-table{
+  width: 100%;
+  margin-top: 10px;
+  border-collapse: collapse;
+  font-size: 0.9em;
+}
+.tips-npc-table th,
+.tips-npc-table td{
+  padding: 6px 10px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border);
+}
+.tips-npc-table th{
+  color: var(--muted);
+  font-weight: 600;
+}
+.tips-npc-table td:first-child{
+  min-width: 8em;
+  color: var(--text);
+}
+.tips-npc-table td:nth-child(2){ min-width: 10em; }
+.tips-npc-table td:nth-child(3){ white-space: nowrap; width: 1%; }
+.tips-npc-table td:last-child{ color: var(--muted); }

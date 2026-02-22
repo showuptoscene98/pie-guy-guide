@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  # Windows first so the release is created with latest.yml (required for in-app updater on Windows)
+  # Windows: Squirrel build for in-place updates (RELEASES + nupkg published to GitHub)
   build-windows:
     runs-on: windows-latest
     steps:

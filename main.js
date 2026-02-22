@@ -1,3 +1,6 @@
+// Handle Squirrel.Windows install/update/uninstall events (must run before other app code)
+if (require("electron-squirrel-startup")) process.exit(0);
+
 const { app, BrowserWindow, ipcMain, globalShortcut, Tray, nativeImage, Menu, screen } = require("electron");
 const path = require("path");
 const fs = require("fs");
