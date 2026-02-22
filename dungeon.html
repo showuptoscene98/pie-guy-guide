@@ -323,21 +323,6 @@
     window.api.onOverlayTitleBarVisible?.(setTitleBarVisible);
   }
 
-  const dungeons = [
-    "Goblin Dungeon Lower",
-    "Goblin Dungeon Upper",
-    "Kur Tower",
-    "Rahu Sewer",
-    "Serbule Crypt",
-    "Wolf Cave",
-    "Yeti Cave",
-    "Myconian Cave",
-    "Labyrinth Map",
-    "Dark Chapel"
-  ];
-  // Dungeons that use a different filename or extension (display name -> file path under dungeons/)
-  const dungeonImageFiles = { "Dark Chapel": "Dark_Chapel.png" };
-
   const DUNGEON_SIDEBAR_WIDTH = 160;
 
   const dungeonSelect = document.getElementById("dungeonSelect");
@@ -347,6 +332,8 @@
   const dungeonOpacitySlider = document.getElementById("dungeonOpacitySlider");
   const dungeonOpacityValue = document.getElementById("dungeonOpacityValue");
 
+  let dungeons = [];
+  let dungeonValues = [];
   let scale = 0.8;
   let x = 40;
   let y = 40;
@@ -355,32 +342,43 @@
     canvas.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
   }
 
-  function loadDungeon(name){
-    const candidates = [dungeonImageFiles[name], `${name}.jpg`, `${name}.png`, `${name}.jpeg`].filter(Boolean);
-    let idx = 0;
-    function tryNext(){
-      if (idx >= candidates.length) return;
-      const file = candidates[idx++];
-      dungeonImage.onload = function(){
-        if (window.api && window.api.setOverlaySize && dungeonImage.naturalWidth && dungeonImage.naturalHeight) {
-          window.api.setOverlaySize(DUNGEON_SIDEBAR_WIDTH + dungeonImage.naturalWidth, dungeonImage.naturalHeight);
-        }
-        loadPlayerIconPosition();
-      };
-      dungeonImage.onerror = tryNext;
-      dungeonImage.src = `dungeons/${file}`;
-    }
-    tryNext();
+  function getDungeonFile(value) {
+    const entry = dungeons.find((d) => d.value === value);
+    return entry ? entry.file : value + ".png";
+  }
+
+  function loadDungeon(value){
+    const file = getDungeonFile(value);
+    dungeonImage.onload = function(){
+      if (window.api && window.api.setOverlaySize && dungeonImage.naturalWidth && dungeonImage.naturalHeight) {
+        window.api.setOverlaySize(DUNGEON_SIDEBAR_WIDTH + dungeonImage.naturalWidth, dungeonImage.naturalHeight);
+      }
+      if (typeof loadPlayerIconPosition === "function") loadPlayerIconPosition();
+    };
+    dungeonImage.onerror = function() { dungeonImage.src = ""; };
+    dungeonImage.src = "dungeons/" + file;
     scale = 0.8; x = 40; y = 40;
     applyTransform();
   }
 
-  dungeons.forEach((name) => {
-    const opt = document.createElement("option");
-    opt.value = name;
-    opt.textContent = name;
-    dungeonSelect.appendChild(opt);
-  });
+  function initDungeonList(entries) {
+    dungeons = entries || [];
+    dungeonValues = dungeons.map((d) => d.value);
+    dungeonSelect.innerHTML = "";
+    dungeons.forEach((d) => {
+      const opt = document.createElement("option");
+      opt.value = d.value;
+      opt.textContent = d.label;
+      dungeonSelect.appendChild(opt);
+    });
+    if (dungeons.length) {
+      loadDungeon(dungeons[0].value);
+      dungeonSelect.value = dungeons[0].value;
+    }
+    if (window.api && window.api.getCurrentDungeonZone && typeof applyZoneFromApp === "function") {
+      window.api.getCurrentDungeonZone().then(applyZoneFromApp);
+    }
+  }
 
   dungeonSelect.addEventListener("change", () => loadDungeon(dungeonSelect.value));
 
@@ -399,8 +397,11 @@
     });
   }
 
-  loadDungeon(dungeons[0]);
-  dungeonSelect.value = dungeons[0];
+  if (window.api && window.api.getDungeonFiles) {
+    window.api.getDungeonFiles().then(initDungeonList);
+  } else {
+    initDungeonList([]);
+  }
 
   // Player icon: position (normalized 0-1), draggable, show when dungeon matches
   const playerIcon = document.getElementById("playerIcon");
@@ -482,7 +483,7 @@
 
   function applyZoneFromApp(zone) {
     currentDungeonZoneFromApp = zone || "";
-    if (zone && dungeons.includes(zone) && dungeonSelect.value !== zone) {
+    if (zone && dungeonValues.includes(zone) && dungeonSelect.value !== zone) {
       dungeonSelect.value = zone;
       loadDungeon(zone);
     }
@@ -493,7 +494,7 @@
     window.api.getCurrentDungeonZone?.().then(applyZoneFromApp);
     window.api.onCurrentDungeonZone?.(applyZoneFromApp);
     window.api.onOverlaySwitchToDungeon?.((zone) => {
-      if (zone && dungeons.includes(zone)) {
+      if (zone && dungeonValues.includes(zone)) {
         dungeonSelect.value = zone;
         loadDungeon(zone);
         currentDungeonZoneFromApp = zone;

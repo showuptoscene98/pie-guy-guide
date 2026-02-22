@@ -1,0 +1,36 @@
+# Supabase project config for Pie Guy Guide (LFG).
+# Link your project: supabase link (then run supabase db push to apply migrations).
+
+project_id = "pie-guy-guide"
+
+{
+  "url": "https://edmxyxwphjnspowcefkp.supabase.co/auth/v1/callback",
+  "anonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkbXh5eHdwaGpuc3Bvd2NlZmtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3NDg5NzMsImV4cCI6MjA4NzMyNDk3M30.WVZq8wXq1Q8sxUpNTbDmM39cMMz6Tfn8dvHggnEd7Cw"
+}
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+
+[db]
+port = 54322
+major_version = 15
+
+[db.migrations]
+enabled = true
+schema_paths = []
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+site_url = "http://127.0.0.1:3000"
+
+[storage]
+enabled = true
+
+[realtime]
+enabled = true

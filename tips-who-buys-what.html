@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Who buys what — NPC shops by area</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #1a1a1a;
+      color: #f2f2f2;
+      overflow: auto;
+    }
+
+    .titlebar {
+      height: 56px;
+      background: #0a0a0a;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      -webkit-app-region: drag;
+      user-select: none;
+    }
+    .titlebar-title {
+      font-weight: 900;
+      font-size: 15px;
+    }
+    .titlebar-hint {
+      font-size: 11px;
+      color: rgba(242,242,242,0.65);
+      margin-top: 2px;
+    }
+    .titlebar-close {
+      -webkit-app-region: no-drag;
+      padding: 8px 14px;
+      font-size: 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: #2f2f2f;
+      color: #f2f2f2;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .titlebar-close:hover {
+      background: #3f3f3f;
+    }
+
+    .content {
+      padding: 16px 20px 24px;
+      max-width: 900px;
+    }
+    .content .muted {
+      color: rgba(242,242,242,0.72);
+      font-size: 13px;
+      margin: 0 0 10px 0;
+    }
+    .tips-npc-table {
+      width: 100%;
+      margin-top: 10px;
+      border-collapse: collapse;
+      font-size: 0.9em;
+    }
+    .tips-npc-table th,
+    .tips-npc-table td {
+      padding: 6px 10px;
+      text-align: left;
+      vertical-align: top;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .tips-npc-table th {
+      color: rgba(242,242,242,0.72);
+      font-weight: 600;
+    }
+    .tips-npc-table td:first-child {
+      min-width: 8em;
+      color: #f2f2f2;
+    }
+    .tips-npc-table td:nth-child(2) { min-width: 10em; }
+    .tips-npc-table td:nth-child(3) { white-space: nowrap; width: 1%; }
+    .tips-npc-table td:last-child { color: rgba(242,242,242,0.72); }
+    .tips-npc-search-wrap { margin-top: 10px; margin-bottom: 12px; }
+    .tips-npc-search-label { display: block; font-size: 12px; color: rgba(242,242,242,0.72); margin-bottom: 4px; }
+    .tips-npc-search-input {
+      width: 100%; max-width: 360px; padding: 8px 12px; font-size: 13px;
+      border: 1px solid rgba(255,255,255,0.08); border-radius: 8px;
+      background: #2b2b2b; color: #f2f2f2;
+    }
+    .tips-npc-search-input::placeholder { color: rgba(242,242,242,0.72); }
+    .tips-area-list .tips-area-details { margin-top: 8px; }
+    .tips-area-list .tips-area-details.tips-area-hidden { display: none; }
+    .tips-area-list .tips-area-details .tips-area-body { padding: 0 0 8px 14px; }
+    .tips-area-list .tips-npc-table { margin-top: 6px; }
+    .tips-search-highlight { background: rgba(255,204,77,0.18); color: #ffcc4d; padding: 0 1px; border-radius: 2px; }
+  </style>
+</head>
+<body tabindex="0">
+
+  <div class="titlebar">
+    <div>
+      <div class="titlebar-title">Who buys what — NPC shops by area</div>
+      <div class="titlebar-hint">Press ESC to close</div>
+    </div>
+    <button type="button" class="titlebar-close" onclick="window.api.closeOverlay()">Close</button>
+  </div>
+
+  <div class="content">
+    <p class="muted">Shopkeepers by area; what they buy is listed to the right. Council pool (start → max at Soul Mates) shown only when on wiki.</p>
+    <div class="tips-npc-search-wrap">
+      <label for="tipsNpcSearchPopup" class="tips-npc-search-label">Search</label>
+      <input type="search" id="tipsNpcSearchPopup" class="tips-npc-search-input" placeholder="Search areas or NPCs (e.g. Hulon, Serbule, armor)…" aria-label="Search areas or NPCs" />
+    </div>
+    <div class="tips-area-list" id="tipsAreaListPopup">
+      <details class="lvl tips-area-details" data-area="Serbule">
+        <summary>Serbule</summary>
+        <div class="tips-area-body">
+          <table class="tips-npc-table">
+            <thead><tr><th>NPC</th><th>Council (start→max)</th><th>Buys</th></tr></thead>
+            <tbody>
+              <tr><td>Azalak</td><td>10k→35k</td><td>Misc: potions, bones, animal remnants, drugs</td></tr>
+              <tr><td>Charles Thompson</td><td>7.5k→60k</td><td>Misc: potions, bones, mushrooms</td></tr>
+              <tr><td>Elahil</td><td>5k→30k</td><td>Misc: recipes, cooking ingredients, food</td></tr>
+              <tr><td>Fainor</td><td>10k→120k</td><td>Misc: books, poetry, scrolls, recipes; everything else reduced</td></tr>
+              <tr><td>Flia</td><td></td><td>Misc: everything reduced, alchemy, gems, food, potions</td></tr>
+              <tr><td>Harry the Wolf</td><td>5k→60k</td><td>Misc: scrolls, books, recipes; everything reduced</td></tr>
+              <tr><td>Hulon</td><td>5k→60k</td><td>Armor, weapons</td></tr>
+              <tr><td>Joeh</td><td>5k→50k</td><td>Armor, weapons; jewelry, crystals, gems</td></tr>
+              <tr><td>Larsan</td><td>10k→120k</td><td>Jewelry; scrolls, recipes, books, poetry</td></tr>
+              <tr><td>Leonard Allenson</td><td>2k→4k</td><td>Everything (limited pool)</td></tr>
+              <tr><td>Marna</td><td>5k→60k</td><td>Misc: mushrooms, skulls, suspensions, remnants; everything at full (limited)</td></tr>
+              <tr><td>Mushroom Jack</td><td>5k→75k</td><td>Misc: shields, jewelry, belts, armor, weapons</td></tr>
+              <tr><td>Roshun the Traitor</td><td>5k→60k</td><td>Misc: seashells, glass, goblin cards, paintings, junk</td></tr>
+              <tr><td>Sir Coth</td><td>5k→60k</td><td>Metal slabs, metal armor</td></tr>
+              <tr><td>Tadion</td><td>2.5k→60k</td><td>Metal slabs, metal armor; vegetables; everything else reduced</td></tr>
+              <tr><td>Therese</td><td>2.5k→65k</td><td>Misc: books, scrolls, recipes; reduced</td></tr>
+              <tr><td>Velkort</td><td></td><td>Misc: fire dust, sulfur, saltpeter, potions, food; reduced</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <details class="lvl tips-area-details" data-area="Serbule Hills">
+        <summary>Serbule Hills</summary>
+        <div class="tips-area-body">
+          <table class="tips-npc-table">
+            <thead><tr><th>NPC</th><th>Council (start→max)</th><th>Buys</th></tr></thead>
+            <tbody>
+              <tr><td>Baroness Marith Felgard</td><td></td><td>Misc: seeds, brewing ingredients; everything at full price</td></tr>
+              <tr><td>Brianna Willer</td><td>1.5k→10.5k</td><td>Everything</td></tr>
+              <tr><td>Cleo Conyer</td><td>2.5k→30k</td><td>Misc: cooking ingredients, food</td></tr>
+              <tr><td>Durstin Tallow</td><td>2.5k→80k</td><td>Armor, weapons, jewelry</td></tr>
+              <tr><td>Paul Vaughn</td><td>10k→120k</td><td>Armor, weapons; recipes, skill books; everything else reduced</td></tr>
+              <tr><td>Sammie Grimspine</td><td>2.5k→40k</td><td>Armor, weapons, jewelry; furniture, wood, crates, dowels</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <details class="lvl tips-area-details" data-area="Serbule Crypt">
+        <summary>Serbule Crypt</summary>
+        <div class="tips-area-body">
+          <table class="tips-npc-table">
+            <thead><tr><th>NPC</th><th>Council (start→max)</th><th>Buys</th></tr></thead>
+            <tbody>
+              <tr><td>Sir Arif</td><td>6.25k→17.5k</td><td>Everything (limited)</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <details class="lvl tips-area-details" data-area="Myconian Cave">
+        <summary>Myconian Cave</summary>
+        <div class="tips-area-body">
+          <table class="tips-npc-table">
+            <thead><tr><th>NPC</th><th>Council (start→max)</th><th>Buys</th></tr></thead>
+            <tbody>
+              <tr><td>Way</td><td>2k→4k</td><td>Everything (limited pool)</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <details class="lvl tips-area-details" data-area="Eltibule">
+        <summary>Eltibule</summary>
+        <div class="tips-area-body">
+          <table class="tips-npc-table">
+            <thead><tr><th>NPC</th><th>Council (start→max)</th><th>Buys</th></tr></thead>
+            <tbody>
+              <tr><td>Helena Veilmoor</td><td>7.5k→80k</td><td>Armor, weapons</td></tr>
+              <tr><td>Hogan</td><td>10k→120k</td><td>Armor, weapons; alchemy, cooking, food, potions</td></tr>
+              <tr><td>Jesina</td><td>1k→3.5k</td><td>Everything (low per-item cap)</td></tr>
+              <tr><td>Jumjab</td><td>7.5k→100k</td><td>Armor, weapons; everything at full</td></tr>
+              <tr><td>Kalaba</td><td>5k→60k</td><td>Skinning knives, leather rolls, skins</td></tr>
+              <tr><td>Kleave</td><td>5k→50k</td><td>Misc: transmutation/augmentation, animal remnants, weapons, armor</td></tr>
+              <tr><td>Sie Antry</td><td>2.5k→10k</td><td>Armor, weapons; everything</td></tr>
+              <tr><td>Suspicious Cow</td><td>5k→15k</td><td>Everything (reduced)</td></tr>
+              <tr><td>Yetta</td><td>5k→60k</td><td>Armor, weapons, animal remnants; jewelry/amulets; everything at full</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <details class="lvl tips-area-details" data-area="Sun Vale">
+        <summary>Sun Vale</summary>
+        <div class="tips-area-body">
+          <table class="tips-npc-table">
+            <thead><tr><th>NPC</th><th>Council (start→max)</th><th>Buys</th></tr></thead>
+            <tbody>
+              <tr><td>Agrashab</td><td>5k→50k</td><td>Armor, weapons</td></tr>
+              <tr><td>Eleme</td><td></td><td>Food, recipes</td></tr>
+              <tr><td>Hiral</td><td></td><td>Misc: everything reduced, equipment</td></tr>
+              <tr><td>Kodan</td><td></td><td>Misc</td></tr>
+              <tr><td>Norbert</td><td></td><td>Misc</td></tr>
+              <tr><td>Preta</td><td></td><td>Misc</td></tr>
+              <tr><td>Spot</td><td></td><td>Misc</td></tr>
+              <tr><td>The Wombat</td><td></td><td>Misc</td></tr>
+              <tr><td>Yavazek</td><td></td><td>Misc</td></tr>
+              <tr><td>Yogzi</td><td></td><td>Misc</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <details class="lvl tips-area-details" data-area="Kur Mountains / Winter Nexus">
+        <summary>Kur Mountains / Winter Nexus</summary>
+        <div class="tips-area-body">
+          <table class="tips-npc-table">
+            <thead><tr><th>NPC</th><th>Council (start→max)</th><th>Buys</th></tr></thead>
+            <tbody>
+              <tr><td>Corey The Croaker</td><td></td><td>Jewelry, misc</td></tr>
+              <tr><td>Fazzi</td><td></td><td>Jewelry, misc</td></tr>
+              <tr><td>Jace Soral</td><td></td><td>Jewelry, misc; everything else reduced</td></tr>
+              <tr><td>Laura Neth</td><td></td><td>Misc; everything else reduced</td></tr>
+              <tr><td>Lamashu</td><td></td><td>Jewelry, misc</td></tr>
+              <tr><td>Syndra</td><td></td><td>Misc</td></tr>
+              <tr><td>Ukorga</td><td></td><td>Armor, weapons; jewelry</td></tr>
+              <tr><td>Urzab</td><td></td><td>Jewelry</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <details class="lvl tips-area-details" data-area="Kur Tower">
+        <summary>Kur Tower</summary>
+        <div class="tips-area-body">
+          <table class="tips-npc-table">
+            <thead><tr><th>NPC</th><th>Council (start→max)</th><th>Buys</th></tr></thead>
+            <tbody>
+              <tr><td>Glajur</td><td></td><td>Everything (reduced)</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <details class="lvl tips-area-details" data-area="Ilmari">
+        <summary>Ilmari</summary>
+        <div class="tips-area-body">
+          <table class="tips-npc-table">
+            <thead><tr><th>NPC</th><th>Council (start→max)</th><th>Buys</th></tr></thead>
+            <tbody>
+              <tr><td>Arlan</td><td></td><td>Misc; everything</td></tr>
+              <tr><td>Firaki</td><td></td><td>Misc; everything</td></tr>
+              <tr><td>Lumpfuzz</td><td></td><td>Misc; everything</td></tr>
+              <tr><td>Ragabir</td><td></td><td>Misc</td></tr>
+              <tr><td>Selaxi</td><td></td><td>Jewelry</td></tr>
+              <tr><td>Urzab</td><td></td><td>Jewelry</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <details class="lvl tips-area-details" data-area="Rahu">
+        <summary>Rahu</summary>
+        <div class="tips-area-body">
+          <table class="tips-npc-table">
+            <thead><tr><th>NPC</th><th>Council (start→max)</th><th>Buys</th></tr></thead>
+            <tbody>
+              <tr><td>Amutasa</td><td></td><td>Misc</td></tr>
+              <tr><td>Ashk the Answerer</td><td></td><td>Misc</td></tr>
+              <tr><td>Eveline Rastin</td><td></td><td>Armor, weapons; misc</td></tr>
+              <tr><td>Hirochi the Booklord</td><td></td><td>Misc</td></tr>
+              <tr><td>Ichin the Ice Master</td><td></td><td>Misc</td></tr>
+              <tr><td>Mandibles</td><td></td><td>Misc</td></tr>
+              <tr><td>Nishika</td><td></td><td>Misc</td></tr>
+              <tr><td>Otis</td><td></td><td>Misc</td></tr>
+              <tr><td>Raina</td><td></td><td>Jewelry</td></tr>
+              <tr><td>Rugen</td><td></td><td>Misc</td></tr>
+              <tr><td>Sirine</td><td></td><td>Misc</td></tr>
+              <tr><td>Tavilak</td><td></td><td>Jewelry, misc</td></tr>
+              <tr><td>Wintria Irasce</td><td></td><td>Misc</td></tr>
+              <tr><td>Willem Fangblade</td><td></td><td>Jewelry, misc</td></tr>
+              <tr><td>Zhao</td><td></td><td>Armor, weapons</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <details class="lvl tips-area-details" data-area="Red Wing Casino">
+        <summary>Red Wing Casino</summary>
+        <div class="tips-area-body">
+          <table class="tips-npc-table">
+            <thead><tr><th>NPC</th><th>Council (start→max)</th><th>Buys</th></tr></thead>
+            <tbody>
+              <tr><td>Kib the Unkillable</td><td></td><td>Armor, weapons</td></tr>
+              <tr><td>Eveline Rastin</td><td></td><td>Misc</td></tr>
+              <tr><td>Mandibles</td><td></td><td>Misc</td></tr>
+              <tr><td>Ragabir</td><td></td><td>Misc</td></tr>
+              <tr><td>Tavilak</td><td></td><td>Misc</td></tr>
+              <tr><td>Willem Fangblade</td><td></td><td>Jewelry</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <details class="lvl tips-area-details" data-area="Fae Realm">
+        <summary>Fae Realm</summary>
+        <div class="tips-area-body">
+          <table class="tips-npc-table">
+            <thead><tr><th>NPC</th><th>Council (start→max)</th><th>Buys</th></tr></thead>
+            <tbody>
+              <tr><td>Bendith the Banished</td><td></td><td>Misc</td></tr>
+              <tr><td>Felmer</td><td></td><td>Jewelry (enchanted elvish), misc</td></tr>
+              <tr><td>Floxie</td><td></td><td>Armor, weapons</td></tr>
+              <tr><td>Pegast</td><td></td><td>Armor, weapons</td></tr>
+              <tr><td>Raina</td><td></td><td>Jewelry</td></tr>
+              <tr><td>Solgribue</td><td></td><td>Misc</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <details class="lvl tips-area-details" data-area="Povus">
+        <summary>Povus</summary>
+        <div class="tips-area-body">
+          <table class="tips-npc-table">
+            <thead><tr><th>NPC</th><th>Council (start→max)</th><th>Buys</th></tr></thead>
+            <tbody>
+              <tr><td>Dachak the Digger</td><td></td><td>Misc</td></tr>
+              <tr><td>Dog Ear</td><td></td><td>Misc</td></tr>
+              <tr><td>Errruka the Benefactor</td><td></td><td>Armor, weapons</td></tr>
+              <tr><td>Ferand Deftwhisper</td><td></td><td>Armor, weapons</td></tr>
+              <tr><td>Gerrux</td><td></td><td>Misc; everything</td></tr>
+              <tr><td>Tryaka</td><td></td><td>Misc; everything</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <details class="lvl tips-area-details" data-area="New Prestonbule Cave">
+        <summary>New Prestonbule Cave</summary>
+        <div class="tips-area-body">
+          <table class="tips-npc-table">
+            <thead><tr><th>NPC</th><th>Council (start→max)</th><th>Buys</th></tr></thead>
+            <tbody>
+              <tr><td>Bellema Deftwhisper</td><td></td><td>Armor, weapons; everything</td></tr>
+              <tr><td>Rick Snapley</td><td></td><td>Misc</td></tr>
+              <tr><td>Sona</td><td></td><td>Misc</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <script>
+    window.addEventListener("contextmenu", (e) => e.preventDefault());
+    window.addEventListener("load", () => document.body.focus());
+    window.addEventListener("focus", () => document.body.focus());
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") window.api.closeOverlay();
+    });
+
+    (function setupTipsNpcSearchPopup() {
+      const input = document.getElementById("tipsNpcSearchPopup");
+      const areaList = document.getElementById("tipsAreaListPopup");
+      if (!input || !areaList) return;
+      function escapeRegex(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+      function runSearch() {
+        const q = input.value.trim().toLowerCase();
+        areaList.querySelectorAll(".tips-area-details").forEach(function(details) {
+          const area = (details.getAttribute("data-area") || "").toLowerCase();
+          const body = details.querySelector(".tips-area-body");
+          if (!body) return;
+          var original = body.getAttribute("data-original-html");
+          if (original == null) {
+            original = body.innerHTML;
+            body.setAttribute("data-original-html", original);
+          }
+          if (!q) {
+            details.classList.remove("tips-area-hidden");
+            body.innerHTML = original;
+            return;
+          }
+          var searchable = (area + " " + (body.textContent || "")).toLowerCase();
+          if (searchable.indexOf(q) === -1) {
+            details.classList.add("tips-area-hidden");
+            return;
+          }
+          details.classList.remove("tips-area-hidden");
+          try {
+            body.innerHTML = original.replace(new RegExp("(" + escapeRegex(q) + ")", "gi"), "<mark class=\"tips-search-highlight\">$1</mark>");
+          } catch (_) {
+            body.innerHTML = original;
+          }
+        });
+      }
+      input.addEventListener("input", runSearch);
+      input.addEventListener("search", runSearch);
+    })();
+  </script>
+</body>
+</html>

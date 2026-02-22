@@ -1,6 +1,6 @@
 {
   "name": "pie-guy-guide",
-  "version": "3.1.36",
+  "version": "3.1.37",
   "description": "Pie Guy - Project Gorgon Guide",
   "main": "main.js",
   "author": "Mewoicles",
@@ -22,6 +22,7 @@
     "electron-builder-squirrel-windows": "^26.8.1"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.97.0",
     "electron-squirrel-startup": "^1.0.1",
     "electron-updater": "^6.7.3",
     "node-window-manager": "^2.2.4"

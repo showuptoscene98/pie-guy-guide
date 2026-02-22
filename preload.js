@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld("api", {
   openLevelingQuickRef: () => ipcRenderer.send("overlay:openLevelingQuickRef"),
   openTipsVendorsCouncilPopup: () => ipcRenderer.send("overlay:openTipsVendorsCouncil"),
   openTipsWhoBuysPopup: () => ipcRenderer.send("overlay:openTipsWhoBuys"),
+  openTipsCommandsPopup: () => ipcRenderer.send("overlay:openTipsCommands"),
   closeOverlay: () => ipcRenderer.send("overlay:close"),
   setOverlaySize: (width, height) => ipcRenderer.send("overlay:setSize", width, height),
   setOverlayOpacity: (value) => ipcRenderer.send("overlay:setOpacity", value),
@@ -24,6 +25,8 @@ contextBridge.exposeInMainWorld("api", {
   getCurrentMapZone: () => ipcRenderer.invoke("overlay:getCurrentMapZone"),
   setCurrentMapZone: (value) => ipcRenderer.send("overlay:setCurrentMapZone", value),
   onCurrentMapZone: (cb) => ipcRenderer.on("overlay:currentMapZone", (e, value) => cb(value)),
+  getMapFiles: () => ipcRenderer.invoke("overlay:getMapFiles"),
+  getDungeonFiles: () => ipcRenderer.invoke("overlay:getDungeonFiles"),
   getCurrentDungeonZone: () => ipcRenderer.invoke("overlay:getCurrentDungeonZone"),
   setCurrentDungeonZone: (value) => ipcRenderer.send("overlay:setCurrentDungeonZone", value),
   onCurrentDungeonZone: (cb) => ipcRenderer.on("overlay:currentDungeonZone", (e, value) => cb(value)),
@@ -34,6 +37,15 @@ contextBridge.exposeInMainWorld("api", {
   getGameWindowSourceId: () => ipcRenderer.invoke("overlay:getGameWindowSourceId"),
   getTheme: () => ipcRenderer.invoke("preferences:getTheme"),
   setTheme: (value) => ipcRenderer.send("preferences:setTheme", value),
+  copyToClipboard: (text) => ipcRenderer.invoke("clipboard:writeText", text),
+  getLfgPlayerName: () => ipcRenderer.invoke("preferences:getLfgPlayerName"),
+  setLfgPlayerName: (value) => ipcRenderer.send("preferences:setLfgPlayerName", value),
+  getLfgServerUrl: () => ipcRenderer.invoke("preferences:getLfgServerUrl"),
+  setLfgServerUrl: (value) => ipcRenderer.send("preferences:setLfgServerUrl", value),
+  getLfgServer: () => ipcRenderer.invoke("preferences:getLfgServer"),
+  setLfgServer: (value) => ipcRenderer.send("preferences:setLfgServer", value),
+  getLfgStartupDismissed: () => ipcRenderer.invoke("preferences:getLfgStartupDismissed"),
+  setLfgStartupDismissed: (value) => ipcRenderer.send("preferences:setLfgStartupDismissed", value),
 
   // Updater
   checkForUpdates: () => ipcRenderer.send("updater:check"),
@@ -51,5 +63,10 @@ contextBridge.exposeInMainWorld("api", {
 
   // Project Gorgon Wiki search
   searchWiki: (query) => ipcRenderer.invoke("wiki:search", query),
-  openWikiPage: (url) => ipcRenderer.send("wiki:open", url)
+  openWikiPage: (url) => ipcRenderer.send("wiki:open", url),
+
+  // Supabase auth (optional)
+  getSupabaseConfig: () => ipcRenderer.invoke("auth:getSupabaseConfig"),
+  authOpenExternal: (url) => ipcRenderer.invoke("auth:openExternal", url),
+  onAuthCallback: (cb) => ipcRenderer.on("auth:callback", (e, url) => cb(url))
 });

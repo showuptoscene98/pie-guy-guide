@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Commands &amp; Emotes</title>
+  <style>
+    html, body { height: 100%; margin: 0; font-family: Arial, sans-serif; background: #1a1a1a; color: #f2f2f2; overflow: auto; }
+    .titlebar {
+      height: 56px; background: #0a0a0a; border-bottom: 1px solid rgba(255,255,255,0.08);
+      display: flex; align-items: center; justify-content: space-between; padding: 0 14px;
+      -webkit-app-region: drag; user-select: none;
+    }
+    .titlebar-title { font-weight: 900; font-size: 15px; }
+    .titlebar-hint { font-size: 11px; color: rgba(242,242,242,0.65); margin-top: 2px; }
+    .titlebar-close {
+      -webkit-app-region: no-drag; padding: 8px 14px; font-size: 12px; border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.14); background: #2f2f2f; color: #f2f2f2; cursor: pointer; font-weight: 700;
+    }
+    .titlebar-close:hover { background: #3f3f3f; }
+    .content { padding: 16px 20px 24px; max-width: 720px; color: rgba(242,242,242,0.85); line-height: 1.55; }
+    .content .muted { color: rgba(242,242,242,0.72); font-size: 13px; }
+    .content a { color: #ffcc4d; text-decoration: none; }
+    .content a:hover { text-decoration: underline; }
+    .tips-cmd-heading { font-size: 1em; margin: 14px 0 6px 0; color: #f2f2f2; }
+    .tips-cmd-heading:first-of-type { margin-top: 0; }
+    .tips-cmd-table { width: 100%; border-collapse: collapse; font-size: 0.9em; margin-bottom: 4px; }
+    .tips-cmd-table td { padding: 4px 10px 4px 0; vertical-align: top; border-bottom: 1px solid rgba(255,255,255,0.08); color: rgba(242,242,242,0.72); }
+    .tips-cmd-table td:first-child { white-space: nowrap; color: #f2f2f2; }
+    .tips-cmd-table code { font-size: 0.92em; background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 4px; color: #ffcc4d; }
+    .tips-cmd-table tr:last-child td { border-bottom: none; }
+  </style>
+</head>
+<body tabindex="0">
+
+  <div class="titlebar">
+    <div>
+      <div class="titlebar-title">Commands &amp; Emotes</div>
+      <div class="titlebar-hint">Press ESC to close</div>
+    </div>
+    <button type="button" class="titlebar-close" onclick="window.api.closeOverlay()">Close</button>
+  </div>
+
+  <div class="content">
+    <p class="muted">Slash commands and emotes from the chat window. Type in the chat/console; all commands start with <strong>/</strong>. Source: <a href="https://wiki.projectgorgon.com/wiki/User_Interface#The_Chat_Window_and_Commands" target="_blank" rel="noopener noreferrer">Project Gorgon Wiki — User Interface</a>.</p>
+
+    <h3 class="tips-cmd-heading">General</h3>
+    <table class="tips-cmd-table"><tbody><tr><td><code>/help</code></td><td>In-game list of available commands.</td></tr></tbody></table>
+
+    <h3 class="tips-cmd-heading">Chat rooms</h3>
+    <table class="tips-cmd-table">
+      <tbody>
+        <tr><td><code>/rooms</code></td><td>List public chat rooms.</td></tr>
+        <tr><td><code>/join Custom1</code></td><td>Join room "Custom1"; creates it if empty.</td></tr>
+        <tr><td><code>/join -Custom1</code></td><td>Join/create private room (hidden from /rooms).</td></tr>
+        <tr><td><code>/leave Custom1</code></td><td>Leave a chat room.</td></tr>
+        <tr><td><code>/c hi</code></td><td>Speak in last custom room used.</td></tr>
+        <tr><td><code>/c OtherRoom hi</code></td><td>Speak in room "OtherRoom".</td></tr>
+      </tbody>
+    </table>
+
+    <h3 class="tips-cmd-heading">Social &amp; messaging</h3>
+    <table class="tips-cmd-table">
+      <tbody>
+        <tr><td><code>/t PlayerName hi</code></td><td>Private message (tell) to PlayerName.</td></tr>
+        <tr><td><code>/r hello</code></td><td>Reply to last /t sender.</td></tr>
+        <tr><td><code>/g morning!</code></td><td>Global chat (all zones).</td></tr>
+        <tr><td><code>/n hello</code></td><td>Nearby chat (local).</td></tr>
+        <tr><td><code>/p hello</code></td><td>Party/group chat.</td></tr>
+        <tr><td><code>/a hello</code></td><td>Guild chat.</td></tr>
+      </tbody>
+    </table>
+
+    <h3 class="tips-cmd-heading">Players &amp; restrictions</h3>
+    <table class="tips-cmd-table">
+      <tbody>
+        <tr><td><code>/friend PlayerName</code></td><td>Send friend request.</td></tr>
+        <tr><td><code>/unfriend PlayerName</code></td><td>Remove from friends.</td></tr>
+        <tr><td><code>/ignore</code></td><td>Show ignored players.</td></tr>
+        <tr><td><code>/ignore PlayerName</code></td><td>Ignore all from PlayerName.</td></tr>
+        <tr><td><code>/unignore PlayerName</code></td><td>Stop ignoring.</td></tr>
+        <tr><td><code>/incognito</code></td><td>Toggle; hide from online lists (persists).</td></tr>
+        <tr><td><code>/who</code></td><td>Players in your current area.</td></tr>
+        <tr><td><code>/who all</code></td><td>All players online (up to 100).</td></tr>
+        <tr><td><code>/restrict</code></td><td>List restriction options.</td></tr>
+        <tr><td><code>/restrict FriendInvite on</code></td><td>Block friend requests (use <code>off</code> to allow).</td></tr>
+        <tr><td><code>/restrict GroupInvite on</code></td><td>Block group invites.</td></tr>
+        <tr><td><code>/restrict GuildInvite on</code></td><td>Block guild invites.</td></tr>
+        <tr><td><code>/restrict Trade on</code></td><td>Block trade requests.</td></tr>
+        <tr><td><code>/restrict ReceiveTips on</code></td><td>Block tips.</td></tr>
+        <tr><td><code>/tip PlayerName 100</code></td><td>Send 100 coins to PlayerName (must be nearby).</td></tr>
+      </tbody>
+    </table>
+
+    <h3 class="tips-cmd-heading">Guilds</h3>
+    <table class="tips-cmd-table">
+      <tbody>
+        <tr><td><code>/guild help</code></td><td>Guild commands you can use.</td></tr>
+        <tr><td><code>/guild who</code></td><td>Online guild members.</td></tr>
+        <tr><td><code>/guild invite PlayerName</code></td><td>Invite to guild.</td></tr>
+        <tr><td><code>/guild kick PlayerName</code></td><td>Kick (needs kick privilege).</td></tr>
+        <tr><td><code>/guild message something</code></td><td>Set guild message of the day.</td></tr>
+        <tr><td><code>/guild rank PlayerName Member</code></td><td>Set rank (needs privilege).</td></tr>
+        <tr><td><code>/guild auditlogs</code></td><td>Guild logs (Rank 9/10). Add <code>old</code> for previous week.</td></tr>
+      </tbody>
+    </table>
+
+    <h3 class="tips-cmd-heading">Hunting groups</h3>
+    <table class="tips-cmd-table">
+      <tbody>
+        <tr><td><code>/invite PlayerName</code></td><td>Invite to party.</td></tr>
+        <tr><td><code>/loot free</code></td><td>Everyone can loot every corpse.</td></tr>
+        <tr><td><code>/loot turns</code></td><td>Group takes turns looting non-Elites.</td></tr>
+        <tr><td><code>/loot unchecked</code></td><td>Anyone can loot (even outside group).</td></tr>
+      </tbody>
+    </table>
+
+    <h3 class="tips-cmd-heading">Other commands</h3>
+    <table class="tips-cmd-table">
+      <tbody>
+        <tr><td><code>/age</code></td><td>Character stats: created, time online, deaths, damage.</td></tr>
+        <tr><td><code>/wiki something</code></td><td>Search wiki in browser.</td></tr>
+        <tr><td><code>/swiki something</code></td><td>Search wiki in Steam browser.</td></tr>
+        <tr><td><code>/forum something</code></td><td>Open forum search in browser.</td></tr>
+        <tr><td><code>/isearch Salt</code></td><td>Search external storage (NPC, chests) for items. <code>/isearch +Salt</code> = exact name.</td></tr>
+        <tr><td><code>/messages</code></td><td>Message of the day and system messages.</td></tr>
+        <tr><td><code>/redeem</code></td><td>Special item vouchers you can redeem.</td></tr>
+        <tr><td><code>/roll 2d6</code></td><td>Roll dice (e.g. two d6).</td></tr>
+        <tr><td><code>/status</code></td><td>Server status, uptime, ping.</td></tr>
+        <tr><td><code>/stuck</code></td><td>Try to unstick your character.</td></tr>
+        <tr><td><code>/wordhunt</code></td><td>Word-hunt minigame.</td></tr>
+        <tr><td><code>/entitle Bob</code></td><td>Give your custom title to player Bob (nearby).</td></tr>
+        <tr><td><code>/leavetut</code></td><td>Leave tutorial island.</td></tr>
+      </tbody>
+    </table>
+
+    <h3 class="tips-cmd-heading">Emotes</h3>
+    <p class="muted" style="margin-bottom:6px;">Visual animations only; no game effect (e.g. /sit does not increase regen).</p>
+    <table class="tips-cmd-table">
+      <tbody>
+        <tr><td><code>/brag</code></td><td><code>/cheer</code></td><td><code>/cry</code></td><td><code>/howl</code></td><td><code>/jeer</code></td><td><code>/laugh</code></td></tr>
+        <tr><td><code>/nap</code></td><td><code>/read</code></td><td><code>/sit</code></td><td><code>/smith</code></td><td><code>/stretch</code></td><td><code>/taunt</code></td></tr>
+        <tr><td><code>/thank</code></td><td><code>/wave</code></td><td><code>/e text</code> or <code>/em text</code></td><td colspan="3">Custom emote; use <code>%t</code> for target.</td></tr>
+      </tbody>
+    </table>
+
+    <h3 class="tips-cmd-heading">Unlisted commands</h3>
+    <table class="tips-cmd-table">
+      <tbody>
+        <tr><td><code>/mapclear</code></td><td>Remove all map pins.</td></tr>
+        <tr><td><code>/unstickchar &lt;name&gt;</code></td><td>On another character: move stuck character to Anagoge.</td></tr>
+        <tr><td><code>/behaviorreport</code></td><td>Behavior Report window (e.g. for challenges).</td></tr>
+        <tr><td><code>/zapresourcesicefishing</code></td><td>Remove deployed icefishing traps (confirm with code). Also: <code>brewing</code>, <code>fletching</code>, <code>cheesemaking</code>, <code>mushroomfarming</code>.</td></tr>
+        <tr><td><code>/particlespam</code></td><td>Toggle particle effects (e.g. world bosses).</td></tr>
+      </tbody>
+    </table>
+
+    <p class="muted" style="margin-top:12px; font-size:12px;">Tip: In the Sell tab, hover over the NPC's money amount to see when their vendor cash resets. Use <strong>Shift</strong> when buying to buy multiple; <strong>Shift</strong> when selling to sell one item instead of the stack.</p>
+  </div>
+
+  <script>
+    window.addEventListener("contextmenu", (e) => e.preventDefault());
+    window.addEventListener("load", () => document.body.focus());
+    window.addEventListener("focus", () => document.body.focus());
+    window.addEventListener("keydown", (e) => { if (e.key === "Escape") window.api.closeOverlay(); });
+  </script>
+</body>
+</html>

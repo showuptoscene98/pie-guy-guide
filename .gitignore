@@ -19,6 +19,7 @@ Thumbs.db
 # Env / secrets
 .env
 .env.*
+supabaseConfig.json
 
 # Editor folders
 .vscode/

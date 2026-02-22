@@ -1,7 +1,7 @@
 // Handle Squirrel.Windows install/update/uninstall events (must run before other app code)
 if (require("electron-squirrel-startup")) process.exit(0);
 
-const { app, BrowserWindow, ipcMain, globalShortcut, Tray, nativeImage, Menu, screen } = require("electron");
+const { app, BrowserWindow, ipcMain, globalShortcut, Tray, nativeImage, Menu, screen, clipboard, shell } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const https = require("https");
@@ -28,6 +28,23 @@ if (!gotLock) {
 }
 
 const PG_NEWS_URL = "https://cdn.projectgorgon.com/news.txt";
+
+// Supabase config (optional): supabaseConfig.json in project root or userData
+function loadSupabaseConfig() {
+  const paths = [
+    path.join(__dirname, "supabaseConfig.json"),
+    path.join(app.getPath("userData"), "supabaseConfig.json")
+  ];
+  for (const configPath of paths) {
+    try {
+      const raw = fs.readFileSync(configPath, "utf8");
+      const data = JSON.parse(raw);
+      if (data.url && data.anonKey) return { url: data.url.trim(), anonKey: data.anonKey.trim() };
+    } catch (_) {}
+  }
+  return null;
+}
+let supabaseConfig = null;
 const PG_NEWS_MAX_ITEMS = 6;
 
 function decodeHtmlEntities(str) {
@@ -115,6 +132,7 @@ let dungeonWindow = null;
 let levelingQuickRefWindow = null;
 let tipsVendorsCouncilWindow = null;
 let tipsWhoBuysWindow = null;
+let tipsCommandsWindow = null;
 let mapClickthrough = false;
 let dungeonClickthrough = false;
 let wikiWindow = null;
@@ -125,6 +143,10 @@ let themePreference = "dark-red";
 let currentMapZone = "";
 let currentDungeonZone = "";
 let playerIconPositions = { map: {}, dungeon: {} };
+let lfgPlayerName = "";
+let lfgServerUrl = "";
+let lfgServer = "";
+let lfgStartupDismissed = false;
 
 const PREFERENCES_PATH = path.join(app.getPath("userData"), "preferences.json");
 
@@ -140,6 +162,10 @@ function loadPreferences() {
       if (prefs.playerIconPositions.map) playerIconPositions.map = prefs.playerIconPositions.map;
       if (prefs.playerIconPositions.dungeon) playerIconPositions.dungeon = prefs.playerIconPositions.dungeon;
     }
+    if (typeof prefs.lfgPlayerName === "string") lfgPlayerName = prefs.lfgPlayerName;
+    if (typeof prefs.lfgServerUrl === "string") lfgServerUrl = prefs.lfgServerUrl;
+    if (typeof prefs.lfgServer === "string") lfgServer = prefs.lfgServer;
+    if (typeof prefs.lfgStartupDismissed === "boolean") lfgStartupDismissed = prefs.lfgStartupDismissed;
   } catch (_) {}
 }
 
@@ -150,7 +176,11 @@ function savePreferences() {
       theme: themePreference,
       currentMapZone,
       currentDungeonZone,
-      playerIconPositions
+      playerIconPositions,
+      lfgPlayerName,
+      lfgServerUrl,
+      lfgServer,
+      lfgStartupDismissed
     }), "utf8");
   } catch (_) {}
 }
@@ -518,10 +548,26 @@ function setupAutoUpdater() {
   setInterval(() => autoUpdater.checkForUpdates(), 4 * 60 * 60 * 1000);
 }
 
+function sendAuthCallbackUrl(url) {
+  if (mainWindow && !mainWindow.isDestroyed() && url && String(url).startsWith("pieguyguide://")) {
+    mainWindow.webContents.send("auth:callback", url);
+  }
+}
+
 app.whenReady().then(() => {
   loadPreferences();
+  supabaseConfig = loadSupabaseConfig();
+  if (supabaseConfig) {
+    app.setAsDefaultProtocolClient("pieguyguide");
+  }
   createMainWindow();
   setupAutoUpdater();
+
+  // Cold start with auth callback URL (e.g. Windows when app was not running)
+  if (supabaseConfig && process.argv && process.argv.length > 1) {
+    const urlArg = process.argv.find((arg) => typeof arg === "string" && arg.startsWith("pieguyguide://"));
+    if (urlArg) setTimeout(() => sendAuthCallbackUrl(urlArg), 1500);
+  }
 
   // Hotkey: F7 minimize to tray / restore
   globalShortcut.register("F7", () => {
@@ -565,12 +611,19 @@ app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
 });
 
-app.on("second-instance", () => {
+app.on("second-instance", (event, commandLine) => {
   if (mainWindow && !mainWindow.isDestroyed()) {
     if (mainWindow.isMinimized()) mainWindow.restore();
     mainWindow.show();
     mainWindow.focus();
   }
+  const url = Array.isArray(commandLine) ? commandLine.find((arg) => typeof arg === "string" && arg.startsWith("pieguyguide://")) : null;
+  if (url) sendAuthCallbackUrl(url);
+});
+
+app.on("open-url", (event, url) => {
+  event.preventDefault();
+  if (url && String(url).startsWith("pieguyguide://")) sendAuthCallbackUrl(url);
 });
 
 // Main controls
@@ -694,6 +747,24 @@ ipcMain.on("overlay:openTipsWhoBuys", () => {
   }
 });
 
+ipcMain.on("overlay:openTipsCommands", () => {
+  try {
+    if (tipsCommandsWindow && !tipsCommandsWindow.isDestroyed()) {
+      tipsCommandsWindow.show();
+      tipsCommandsWindow.focus();
+      return;
+    }
+    if (mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible()) minimizeMainToTray();
+    tipsCommandsWindow = createTipsPopupWindow("tips-commands.html");
+    tipsCommandsWindow.on("closed", () => {
+      tipsCommandsWindow = null;
+      restoreMainIfMinimized();
+    });
+  } catch (e) {
+    console.error("overlay:openTipsCommands", e);
+  }
+});
+
 // Close overlay (ESC)
 ipcMain.on("overlay:close", (event) => {
   const win = BrowserWindow.fromWebContents(event.sender);
@@ -727,6 +798,55 @@ function setOverlayClickthrough(win, enabled) {
   win.setIgnoreMouseEvents(enabled, { forward: true });
   win.webContents.send("overlay:clickthroughState", enabled);
 }
+
+// List map and dungeon images from local folders (show only what exists)
+const IMAGE_EXTS = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
+function humanize(name) {
+  const s = name.replace(/_/g, " ");
+  return s.replace(/([a-z])([A-Z])/g, "$1 $2").trim() || s;
+}
+function getMapsPath() {
+  return app.isPackaged ? path.join(process.resourcesPath, "maps") : path.join(__dirname, "maps");
+}
+function getDungeonsPath() {
+  return app.isPackaged ? path.join(process.resourcesPath, "dungeons") : path.join(__dirname, "dungeons");
+}
+function listMapFiles() {
+  const dir = getMapsPath();
+  if (!fs.existsSync(dir)) return [];
+  const entries = [];
+  for (const name of fs.readdirSync(dir)) {
+    const ext = path.extname(name).toLowerCase();
+    if (!IMAGE_EXTS.includes(ext)) continue;
+    const value = name.slice(0, -ext.length);
+    entries.push({ value, label: humanize(value), file: name });
+  }
+  entries.sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: "base" }));
+  return entries;
+}
+function listDungeonFiles() {
+  const dir = getDungeonsPath();
+  if (!fs.existsSync(dir)) return [];
+  const byBase = new Map();
+  const extOrder = [".png", ".jpg", ".jpeg", ".gif", ".webp"];
+  for (const name of fs.readdirSync(dir)) {
+    const ext = path.extname(name).toLowerCase();
+    if (!IMAGE_EXTS.includes(ext)) continue;
+    const base = name.slice(0, -ext.length);
+    const label = humanize(base);
+    const order = extOrder.indexOf(ext);
+    const existing = byBase.get(label);
+    if (!existing || (order >= 0 && (extOrder.indexOf(path.extname(existing.file).toLowerCase()) < order))) {
+      byBase.set(label, { value: label, label, file: name });
+    }
+  }
+  const entries = Array.from(byBase.values());
+  entries.sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: "base" }));
+  return entries;
+}
+
+ipcMain.handle("overlay:getMapFiles", () => listMapFiles());
+ipcMain.handle("overlay:getDungeonFiles", () => listDungeonFiles());
 
 ipcMain.handle("overlay:getAnchorPreference", () => overlayAnchorTopRight);
 ipcMain.handle("overlay:getTitleBarVisible", () => overlayTitleBarVisible);
@@ -775,6 +895,36 @@ ipcMain.on("preferences:setTheme", (event, value) => {
     themePreference = value;
     savePreferences();
   }
+});
+
+ipcMain.handle("clipboard:writeText", (event, text) => {
+  if (typeof text === "string") clipboard.writeText(text);
+});
+ipcMain.handle("preferences:getLfgPlayerName", () => lfgPlayerName);
+ipcMain.on("preferences:setLfgPlayerName", (event, value) => {
+  lfgPlayerName = typeof value === "string" ? value : "";
+  savePreferences();
+});
+ipcMain.handle("preferences:getLfgServerUrl", () => lfgServerUrl);
+ipcMain.on("preferences:setLfgServerUrl", (event, value) => {
+  lfgServerUrl = typeof value === "string" ? value : "";
+  savePreferences();
+});
+ipcMain.handle("preferences:getLfgServer", () => lfgServer);
+ipcMain.on("preferences:setLfgServer", (event, value) => {
+  lfgServer = typeof value === "string" ? value : "";
+  savePreferences();
+});
+
+// Supabase auth (optional)
+ipcMain.handle("auth:getSupabaseConfig", () => supabaseConfig);
+ipcMain.handle("auth:openExternal", (event, url) => {
+  if (url && typeof url === "string") shell.openExternal(url);
+});
+ipcMain.handle("preferences:getLfgStartupDismissed", () => lfgStartupDismissed);
+ipcMain.on("preferences:setLfgStartupDismissed", (event, value) => {
+  lfgStartupDismissed = !!value;
+  savePreferences();
 });
 
 ipcMain.on("overlay:setClickthrough", (event, enabled) => {

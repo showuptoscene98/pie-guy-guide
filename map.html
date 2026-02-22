@@ -335,38 +335,19 @@
     window.api.onOverlayTitleBarVisible?.(setTitleBarVisible);
   }
 
-  // value = zone id (storage/sync), label = dropdown text, file = filename in maps/
-  const maps = [
-    { value: "AnagogeIsland", label: "Anagoge Island", file: "AnagogeIsland.jpg" },
-    { value: "Eltibule", label: "Eltibule", file: "Eltibule.jpg" },
-    { value: "Fae Realm", label: "Fae Realm", file: "Fae Realm.jpg" },
-    { value: "Gazluk", label: "Gazluk", file: "Gazluk.jpg" },
-    { value: "Ilmari", label: "Ilmari", file: "Ilmari.jpg" },
-    { value: "Kur Mountains", label: "Kur Mountains", file: "Kur Mountains.jpg" },
-    { value: "Povus", label: "Povus", file: "Povus.jpg" },
-    { value: "Rahu", label: "Rahu", file: "Rahu.jpg" },
-    { value: "Serbule", label: "Serbule", file: "Serbule.jpg" },
-    { value: "SerbuleHills", label: "Serbule Hills", file: "SerbuleHills.jpg" },
-    { value: "Sun Vale", label: "Sun Vale", file: "Sun Vale.jpg" },
-    { value: "StagingArea", label: "Staging Area", file: "StagingArea.png" },
-    { value: "PhantomIlmariDesert", label: "Phantom Ilmari Desert", file: "PhantomIlmariDesert.png" },
-    { value: "RedWingCasino", label: "Red Wing Casino", file: "RedWingCasino.png" },
-    { value: "Vidaria", label: "Vidaria", file: "Vidaria.png" },
-    { value: "Statehelm", label: "Statehelm", file: "Statehelm.png" },
-    { value: "WinterNexus", label: "Winter Nexus", file: "WinterNexus.png" }
-  ];
-  const mapValues = maps.map((m) => m.value);
-  function getMapFile(value) {
-    const entry = maps.find((m) => m.value === value);
-    return entry ? entry.file : value + ".jpg";
-  }
-
   const mapSelect = document.getElementById("mapSelect");
   const mapImage = document.getElementById("mapImage");
   const stage = document.getElementById("stage");
   const canvas = document.getElementById("canvas");
   const mapOpacitySlider = document.getElementById("mapOpacitySlider");
   const mapOpacityValue = document.getElementById("mapOpacityValue");
+
+  let maps = [];
+  let mapValues = [];
+  function getMapFile(value) {
+    const entry = maps.find((m) => m.value === value);
+    return entry ? entry.file : value + ".jpg";
+  }
 
   let scale = 0.8;
   let x = 40;
@@ -384,20 +365,31 @@
       if (window.api && window.api.setOverlaySize && mapImage.naturalWidth && mapImage.naturalHeight) {
         window.api.setOverlaySize(MAP_SIDEBAR_WIDTH + mapImage.naturalWidth, mapImage.naturalHeight);
       }
-      loadPlayerIconPosition();
+      if (typeof loadPlayerIconPosition === "function") loadPlayerIconPosition();
     };
     mapImage.src = "maps/" + file;
     scale = 0.8; x = 40; y = 40;
     applyTransform();
   }
 
-  // Populate dropdown
-  maps.forEach((m) => {
-    const opt = document.createElement("option");
-    opt.value = m.value;
-    opt.textContent = m.label;
-    mapSelect.appendChild(opt);
-  });
+  function initMapList(entries) {
+    maps = entries || [];
+    mapValues = maps.map((m) => m.value);
+    mapSelect.innerHTML = "";
+    maps.forEach((m) => {
+      const opt = document.createElement("option");
+      opt.value = m.value;
+      opt.textContent = m.label;
+      mapSelect.appendChild(opt);
+    });
+    if (maps.length) {
+      loadMap(maps[0].value);
+      mapSelect.value = maps[0].value;
+    }
+    if (window.api && window.api.getCurrentMapZone && typeof applyZoneFromApp === "function") {
+      window.api.getCurrentMapZone().then(applyZoneFromApp);
+    }
+  }
 
   mapSelect.addEventListener("change", () => loadMap(mapSelect.value));
 
@@ -408,7 +400,6 @@
     });
   }
 
-  // Opacity slider
   if (mapOpacitySlider && window.api && window.api.setOverlayOpacity) {
     mapOpacitySlider.addEventListener("input", () => {
       const pct = mapOpacitySlider.value;
@@ -417,8 +408,11 @@
     });
   }
 
-  loadMap(maps[0].value);
-  mapSelect.value = maps[0].value;
+  if (window.api && window.api.getMapFiles) {
+    window.api.getMapFiles().then(initMapList);
+  } else {
+    initMapList([]);
+  }
 
   // Player icon: position (normalized 0-1), draggable, show when zone matches
   const playerIcon = document.getElementById("playerIcon");

@@ -6,6 +6,32 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body data-theme="dark-red">
+  <!-- Startup: character + server (shown via Connect on LFG page) -->
+  <div class="startup-modal hidden" id="startupModal">
+    <div class="startup-modal-backdrop"></div>
+    <div class="startup-modal-box">
+      <h2 class="startup-modal-title">Welcome to Pie Guy Guide</h2>
+      <p class="startup-modal-desc">Enter your character name and server to continue. You can change these later in Options.</p>
+      <div class="startup-modal-form">
+        <label for="startupCharacterName">Character name</label>
+        <input type="text" id="startupCharacterName" placeholder="Your in-game character name" aria-label="Character name" required />
+        <label for="startupServer">Server</label>
+        <select id="startupServer" aria-label="Server">
+          <option value="1">Miraverre</option>
+          <option value="2">Strekios</option>
+          <option value="3">Dreva</option>
+          <option value="4">Arisetsu</option>
+        </select>
+        <p class="startup-modal-error hidden" id="startupModalError"></p>
+        <div class="startup-modal-buttons">
+          <button type="button" class="primary startup-modal-btn" id="startupSubmitBtn">Continue</button>
+          <button type="button" class="startup-modal-btn startup-modal-skip" id="startupSkipBtn">I'm not interested in LFG currently</button>
+        </div>
+        <p class="startup-modal-esc muted">Press <kbd>ESC</kbd> to close without setting.</p>
+      </div>
+    </div>
+  </div>
+
   <div class="app">
 
     <!-- Topbar (drag region) -->
@@ -29,6 +55,23 @@
               <input type="checkbox" id="optionAnchorOverlays" checked />
               <span>Anchor map & dungeon to top right</span>
             </label>
+            <div class="options-dropdown-item options-lfg-row">
+              <label for="optionLfgPlayerName">Your in-game name (LFG)</label>
+              <input type="text" id="optionLfgPlayerName" placeholder="Character name" aria-label="Your in-game name for LFG" />
+            </div>
+            <div class="options-dropdown-item options-lfg-row">
+              <label for="optionLfgServerUrl">LFG server URL</label>
+              <input type="url" id="optionLfgServerUrl" placeholder="https://edmxyxwphjnspowcefkp.supabase.co/auth/v1/callback" aria-label="LFG API base URL" />
+            </div>
+            <div class="options-dropdown-item options-lfg-row">
+              <label for="optionLfgServer">Game server</label>
+              <select id="optionLfgServer" aria-label="Game server">
+                <option value="1">Miraverre</option>
+                <option value="2">Strekios</option>
+                <option value="3">Dreva</option>
+                <option value="4">Arisetsu</option>
+              </select>
+            </div>
             <div class="options-dropdown-item options-theme-row">
               <label for="optionTheme">Theme</label>
               <select id="optionTheme" aria-label="Theme">
@@ -41,6 +84,15 @@
                 <option value="sunset">Sunset</option>
                 <option value="slate">Slate</option>
               </select>
+            </div>
+            <div class="options-dropdown-item options-account-row" id="optionsAccountRow" style="display: none;">
+              <div class="options-dropdown-title" style="margin-top: 8px;">Account</div>
+              <div id="authLoggedOut">
+                <button type="button" class="primary auth-btn" id="authLoginBtn">Login with Discord</button>
+              </div>
+              <div id="authLoggedIn" style="display: none;">
+                <p class="auth-user-line"><span id="authUserName">—</span> <button type="button" class="auth-signout-btn" id="authSignOutBtn">Sign out</button></p>
+              </div>
             </div>
           </div>
         </div>
@@ -84,6 +136,11 @@
           <button class="navBtn" id="navBossTimer" onclick="go('boss-timer')">
             <img class="icon" src="assets/icons/Boss_Timer.png" alt="" draggable="false" />
             <span class="label">Boss Timer</span>
+          </button>
+
+          <button class="navBtn" id="navLfg" onclick="go('lfg')">
+            <img class="icon" src="assets/icons/Casino_Daily.png" alt="" draggable="false" />
+            <span class="label">LFG</span>
           </button>
 
           <button class="navBtn" id="navCasinoDaily" onclick="go('casino-daily')">
@@ -337,6 +394,70 @@
     </div>
   </div>
 </section>
+
+        <section class="page" id="page-lfg">
+          <h1>LFG / Group finder</h1>
+          <p>Find or form groups by server. Set <strong>LFG server URL</strong> in Options (gear) if needed.</p>
+          <button type="button" class="primary lfg-connect-btn" id="lfgConnectBtn">Connect</button>
+          <div class="lfg-server-tabs" role="tablist" aria-label="Server">
+            <button type="button" class="lfg-tab active" data-server="1" role="tab" aria-selected="true">Miraverre</button>
+            <button type="button" class="lfg-tab" data-server="2" role="tab" aria-selected="false">Strekios</button>
+            <button type="button" class="lfg-tab" data-server="3" role="tab" aria-selected="false">Dreva</button>
+            <button type="button" class="lfg-tab" data-server="4" role="tab" aria-selected="false">Arisetsu</button>
+          </div>
+          <div class="lfg-create-wrap">
+            <h2 class="lfg-section-title">Create a post</h2>
+            <div class="lfg-create-row">
+              <input type="text" id="lfgPostTitle" class="lfg-input" placeholder="e.g. LFG Winter Nexus Daily" aria-label="Post title" />
+              <label for="lfgPostSlots" class="lfg-slots-label">Slots</label>
+              <input type="number" id="lfgPostSlots" class="lfg-slots-input" min="1" max="20" value="4" aria-label="Number of slots" />
+              <button type="button" class="primary lfg-btn" id="lfgCreateBtn">Create post</button>
+            </div>
+            <div class="lfg-create-description">
+              <label for="lfgPostDescription">Description</label>
+              <textarea id="lfgPostDescription" class="lfg-description-input" placeholder="Optional details…" rows="2" aria-label="Post description"></textarea>
+            </div>
+            <div class="lfg-create-tags">
+              <span class="lfg-create-tags-label">Tags</span>
+              <div class="lfg-create-tags-list" id="lfgPostTagsList"></div>
+            </div>
+            <div class="lfg-create-language">
+              <label for="lfgPostLanguage">Language</label>
+              <select id="lfgPostLanguage" class="lfg-language-select" aria-label="Language">
+                <option value="English">English</option>
+                <option value="Spanish">Spanish</option>
+                <option value="Russian">Russian</option>
+                <option value="Portuguese">Portuguese</option>
+              </select>
+            </div>
+          </div>
+          <div class="lfg-list-wrap">
+            <h2 class="lfg-section-title">Posts</h2>
+            <div class="lfg-filters-row">
+              <label for="lfgFilterTag" class="lfg-filter-label">Tag</label>
+              <select id="lfgFilterTag" class="lfg-filter-select" aria-label="Filter by tag">
+                <option value="">All</option>
+                <option value="Casino Daily">Casino Daily</option>
+                <option value="Grinding">Grinding</option>
+                <option value="Unlocking Content">Unlocking Content</option>
+                <option value="Questing">Questing</option>
+              </select>
+              <label for="lfgFilterLanguage" class="lfg-filter-label">Language</label>
+              <select id="lfgFilterLanguage" class="lfg-filter-select" aria-label="Filter by language">
+                <option value="">All</option>
+                <option value="English">English</option>
+                <option value="Spanish">Spanish</option>
+                <option value="Russian">Russian</option>
+                <option value="Portuguese">Portuguese</option>
+              </select>
+              <button type="button" class="primary lfg-btn" id="lfgRefreshBtn">Refresh</button>
+            </div>
+            <div class="lfg-posts-list" id="lfgPostsList">
+              <div class="lfg-loading muted hidden" id="lfgLoading">Loading…</div>
+              <div class="lfg-error hidden" id="lfgError"></div>
+            </div>
+          </div>
+        </section>
 
         <section class="page" id="page-boss-timer">
           <h1>Boss Timer</h1>
@@ -618,6 +739,129 @@
               </div>
             </div>
           </details>
+          <details class="lvl tips-dropdown">
+            <summary>Commands &amp; Emotes <button type="button" class="tips-pin-btn" onclick="event.preventDefault(); event.stopPropagation(); window.api?.openTipsCommandsPopup?.();" aria-label="Open in popup window">Open in window</button></summary>
+            <div class="lvlBody tips-commands-list">
+              <p class="muted">Slash commands and emotes from the chat window. Type in the chat/console; all commands start with <strong>/</strong>. Source: <a href="https://wiki.projectgorgon.com/wiki/User_Interface#The_Chat_Window_and_Commands" target="_blank" rel="noopener noreferrer">Project Gorgon Wiki — User Interface</a>.</p>
+
+              <h3 class="tips-cmd-heading">General</h3>
+              <table class="tips-cmd-table">
+                <tbody>
+                  <tr><td><code>/help</code></td><td>In-game list of available commands.</td></tr>
+                </tbody>
+              </table>
+
+              <h3 class="tips-cmd-heading">Chat rooms</h3>
+              <table class="tips-cmd-table">
+                <tbody>
+                  <tr><td><code>/rooms</code></td><td>List public chat rooms.</td></tr>
+                  <tr><td><code>/join Custom1</code></td><td>Join room "Custom1"; creates it if empty.</td></tr>
+                  <tr><td><code>/join -Custom1</code></td><td>Join/create private room (hidden from /rooms).</td></tr>
+                  <tr><td><code>/leave Custom1</code></td><td>Leave a chat room.</td></tr>
+                  <tr><td><code>/c hi</code></td><td>Speak in last custom room used.</td></tr>
+                  <tr><td><code>/c OtherRoom hi</code></td><td>Speak in room "OtherRoom".</td></tr>
+                </tbody>
+              </table>
+
+              <h3 class="tips-cmd-heading">Social &amp; messaging</h3>
+              <table class="tips-cmd-table">
+                <tbody>
+                  <tr><td><code>/t PlayerName hi</code></td><td>Private message (tell) to PlayerName.</td></tr>
+                  <tr><td><code>/r hello</code></td><td>Reply to last /t sender.</td></tr>
+                  <tr><td><code>/g morning!</code></td><td>Global chat (all zones).</td></tr>
+                  <tr><td><code>/n hello</code></td><td>Nearby chat (local).</td></tr>
+                  <tr><td><code>/p hello</code></td><td>Party/group chat.</td></tr>
+                  <tr><td><code>/a hello</code></td><td>Guild chat.</td></tr>
+                </tbody>
+              </table>
+
+              <h3 class="tips-cmd-heading">Players &amp; restrictions</h3>
+              <table class="tips-cmd-table">
+                <tbody>
+                  <tr><td><code>/friend PlayerName</code></td><td>Send friend request.</td></tr>
+                  <tr><td><code>/unfriend PlayerName</code></td><td>Remove from friends.</td></tr>
+                  <tr><td><code>/ignore</code></td><td>Show ignored players.</td></tr>
+                  <tr><td><code>/ignore PlayerName</code></td><td>Ignore all from PlayerName.</td></tr>
+                  <tr><td><code>/unignore PlayerName</code></td><td>Stop ignoring.</td></tr>
+                  <tr><td><code>/incognito</code></td><td>Toggle; hide from online lists (persists).</td></tr>
+                  <tr><td><code>/who</code></td><td>Players in your current area.</td></tr>
+                  <tr><td><code>/who all</code></td><td>All players online (up to 100).</td></tr>
+                  <tr><td><code>/restrict</code></td><td>List restriction options.</td></tr>
+                  <tr><td><code>/restrict FriendInvite on</code></td><td>Block friend requests (use <code>off</code> to allow).</td></tr>
+                  <tr><td><code>/restrict GroupInvite on</code></td><td>Block group invites.</td></tr>
+                  <tr><td><code>/restrict GuildInvite on</code></td><td>Block guild invites.</td></tr>
+                  <tr><td><code>/restrict Trade on</code></td><td>Block trade requests.</td></tr>
+                  <tr><td><code>/restrict ReceiveTips on</code></td><td>Block tips.</td></tr>
+                  <tr><td><code>/tip PlayerName 100</code></td><td>Send 100 coins to PlayerName (must be nearby).</td></tr>
+                </tbody>
+              </table>
+
+              <h3 class="tips-cmd-heading">Guilds</h3>
+              <table class="tips-cmd-table">
+                <tbody>
+                  <tr><td><code>/guild help</code></td><td>Guild commands you can use.</td></tr>
+                  <tr><td><code>/guild who</code></td><td>Online guild members.</td></tr>
+                  <tr><td><code>/guild invite PlayerName</code></td><td>Invite to guild.</td></tr>
+                  <tr><td><code>/guild kick PlayerName</code></td><td>Kick (needs kick privilege).</td></tr>
+                  <tr><td><code>/guild message something</code></td><td>Set guild message of the day.</td></tr>
+                  <tr><td><code>/guild rank PlayerName Member</code></td><td>Set rank (needs privilege).</td></tr>
+                  <tr><td><code>/guild auditlogs</code></td><td>Guild logs (Rank 9/10). Add <code>old</code> for previous week.</td></tr>
+                </tbody>
+              </table>
+
+              <h3 class="tips-cmd-heading">Hunting groups</h3>
+              <table class="tips-cmd-table">
+                <tbody>
+                  <tr><td><code>/invite PlayerName</code></td><td>Invite to party.</td></tr>
+                  <tr><td><code>/loot free</code></td><td>Everyone can loot every corpse.</td></tr>
+                  <tr><td><code>/loot turns</code></td><td>Group takes turns looting non-Elites.</td></tr>
+                  <tr><td><code>/loot unchecked</code></td><td>Anyone can loot (even outside group).</td></tr>
+                </tbody>
+              </table>
+
+              <h3 class="tips-cmd-heading">Other commands</h3>
+              <table class="tips-cmd-table">
+                <tbody>
+                  <tr><td><code>/age</code></td><td>Character stats: created, time online, deaths, damage.</td></tr>
+                  <tr><td><code>/wiki something</code></td><td>Search wiki in browser.</td></tr>
+                  <tr><td><code>/swiki something</code></td><td>Search wiki in Steam browser.</td></tr>
+                  <tr><td><code>/forum something</code></td><td>Open forum search in browser.</td></tr>
+                  <tr><td><code>/isearch Salt</code></td><td>Search external storage (NPC, chests) for items. <code>/isearch +Salt</code> = exact name.</td></tr>
+                  <tr><td><code>/messages</code></td><td>Message of the day and system messages.</td></tr>
+                  <tr><td><code>/redeem</code></td><td>Special item vouchers you can redeem.</td></tr>
+                  <tr><td><code>/roll 2d6</code></td><td>Roll dice (e.g. two d6).</td></tr>
+                  <tr><td><code>/status</code></td><td>Server status, uptime, ping.</td></tr>
+                  <tr><td><code>/stuck</code></td><td>Try to unstick your character.</td></tr>
+                  <tr><td><code>/wordhunt</code></td><td>Word-hunt minigame.</td></tr>
+                  <tr><td><code>/entitle Bob</code></td><td>Give your custom title to player Bob (nearby).</td></tr>
+                  <tr><td><code>/leavetut</code></td><td>Leave tutorial island.</td></tr>
+                </tbody>
+              </table>
+
+              <h3 class="tips-cmd-heading">Emotes</h3>
+              <p class="muted" style="margin-bottom:6px;">Visual animations only; no game effect (e.g. /sit does not increase regen).</p>
+              <table class="tips-cmd-table">
+                <tbody>
+                  <tr><td><code>/brag</code></td><td><code>/cheer</code></td><td><code>/cry</code></td><td><code>/howl</code></td><td><code>/jeer</code></td><td><code>/laugh</code></td></tr>
+                  <tr><td><code>/nap</code></td><td><code>/read</code></td><td><code>/sit</code></td><td><code>/smith</code></td><td><code>/stretch</code></td><td><code>/taunt</code></td></tr>
+                  <tr><td><code>/thank</code></td><td><code>/wave</code></td><td><code>/e text</code> or <code>/em text</code></td><td colspan="3">Custom emote; use <code>%t</code> for target.</td></tr>
+                </tbody>
+              </table>
+
+              <h3 class="tips-cmd-heading">Unlisted commands</h3>
+              <table class="tips-cmd-table">
+                <tbody>
+                  <tr><td><code>/mapclear</code></td><td>Remove all map pins.</td></tr>
+                  <tr><td><code>/unstickchar &lt;name&gt;</code></td><td>On another character: move stuck character to Anagoge.</td></tr>
+                  <tr><td><code>/behaviorreport</code></td><td>Behavior Report window (e.g. for challenges).</td></tr>
+                  <tr><td><code>/zapresourcesicefishing</code></td><td>Remove deployed icefishing traps (confirm with code). Also: <code>brewing</code>, <code>fletching</code>, <code>cheesemaking</code>, <code>mushroomfarming</code>.</td></tr>
+                  <tr><td><code>/particlespam</code></td><td>Toggle particle effects (e.g. world bosses).</td></tr>
+                </tbody>
+              </table>
+
+              <p class="muted" style="margin-top:12px; font-size:12px;">Tip: In the Sell tab, hover over the NPC’s money amount to see when their vendor cash resets. Use <strong>Shift</strong> when buying to buy multiple; <strong>Shift</strong> when selling to sell one item instead of the stack.</p>
+            </div>
+          </details>
         </section>
 
         <section class="page" id="page-instructions">
@@ -645,8 +889,17 @@
             <p>Click the <strong>⚙ Options</strong> button in the top bar to open:</p>
             <ul>
               <li><strong>Anchor map &amp; dungeon to top right</strong> — If checked, when you open the map or dungeon overlay it is placed at the top-right of your screen (or, if Project Gorgon is running, at the top-right of the game window). If unchecked, the overlay opens in the center of the screen.</li>
+              <li><strong>Your in-game name (LFG)</strong> — Your <strong>character name</strong> in Project Gorgon. You must use your real in-game character name for LFG to work (see LFG section below).</li>
+              <li><strong>LFG server URL</strong> — The base URL of the LFG API (e.g. <code>http://localhost:3765</code> if you run the included server locally). Leave blank or set to a community LFG server if one is provided.</li>
+              <li><strong>Game server</strong> — Your Project Gorgon server: <strong>Miraverre</strong>, <strong>Strekios</strong>, <strong>Dreva</strong>, or <strong>Arisetsu</strong>. LFG posts are grouped by server.</li>
               <li><strong>Theme</strong> — Choose a theme (Dark Mode, Dark Red, Normal, Ocean, Forest, Purple, Sunset, or Slate) for the app’s appearance. Your choice is saved.</li>
+              <li><strong>Account</strong> — If configured, you can <strong>Login with Discord</strong> to save your character name and server to your account. When logged in, changing these in Options syncs them to your account so they’re available on other devices or after reinstalling.</li>
             </ul>
+          </div>
+
+          <div class="instructions-block">
+            <h2>Account (optional)</h2>
+            <p>If the app is configured with a Supabase project, an <strong>Account</strong> section appears in Options. You can <strong>Login with Discord</strong> to link your Discord account. When logged in, your <strong>character name</strong> and <strong>game server</strong> (and LFG server URL) are saved to your account. They sync when you change them in Options, and when you log in on another device or after reinstalling, the app can load these settings so you don’t have to re-enter them.</p>
           </div>
 
           <div class="instructions-block">
@@ -681,6 +934,19 @@
           </div>
 
           <div class="instructions-block">
+            <h2>LFG (Looking for Group)</h2>
+            <p>The <strong>LFG</strong> section lets you find or form groups by server. You can create a post (e.g. “Running Gazluk, need DPS”) and others can mark themselves as interested, or you can browse posts and join as interested.</p>
+            <p><strong>Important:</strong> You must use your <strong>actual in-game character name</strong> for LFG to work. Set <strong>Your in-game name (LFG)</strong> in Options (or in the Connect modal on the LFG page) to the same name as your character in Project Gorgon. Other players will see this name when you post or mark interested, and the system allows only one post per character per server.</p>
+            <ul>
+              <li><strong>Connect</strong> — If you haven’t set a character name and server yet, click <strong>Connect</strong> to open the same form (character name + server). Choose your server: <strong>Miraverre</strong>, <strong>Strekios</strong>, <strong>Dreva</strong>, or <strong>Arisetsu</strong>.</li>
+              <li><strong>Server tabs</strong> — Use the tabs (Miraverre, Strekios, Dreva, Arisetsu) to switch which server’s posts you’re viewing. Your selected server in Options determines which server you post to when you create a new post.</li>
+              <li><strong>Create a post</strong> — Enter a description, optional tags and language, and number of slots. Your post appears under the current server. Only one post per character per server is allowed.</li>
+              <li><strong>Interested</strong> — Click <strong>Interested</strong> on a post to add your character name to the list. The poster (and you) can remove you from the list if needed.</li>
+              <li><strong>LFG server URL</strong> — The app talks to an LFG API. Set the <strong>LFG server URL</strong> in Options (e.g. a community host or <code>http://localhost:3765</code> if you run the included server). If the URL is wrong or the server is down, loading or posting will fail.</li>
+            </ul>
+          </div>
+
+          <div class="instructions-block">
             <h2>Leveling</h2>
             <p>The Leveling Guide lists <strong>best areas to level</strong> in Project Gorgon by level bracket (0–10, 5–20, 20–40, and so on). Expand a bracket to read details. When a bracket has more than one area, use the <strong>Area</strong> dropdown to switch between options (e.g. Serbule Hills, Serbule Crypt, Goblin Dungeon). Click <strong>Quick reference</strong> at the top right to open the summary table in a <strong>popout window</strong> (like Maps or Dungeons), so you can keep it visible over the game. The main app minimizes to the tray while the quick reference window is open. Press <strong>ESC</strong> or click <strong>Close</strong> to close the popout.</p>
           </div>
@@ -692,12 +958,12 @@
 
           <div class="instructions-block">
             <h2>Tips</h2>
-            <p>General <strong>gameplay tips</strong> for Project Gorgon: food buffs, foraging, inventory management, and similar advice. The Tips section has expandable dropdowns for <strong>Vendors Council</strong> (when vendor sell limits reset) and <strong>Who buys what</strong> (NPC shops by area). You can <strong>pin</strong> any of these dropdowns to a <strong>separate popup window</strong>: click <strong>Open in window</strong> next to the dropdown title. The popup behaves like the Leveling quick reference — it stays on top, the main app minimizes to the tray while it’s open, and you can close it with <strong>ESC</strong> or the Close button. Use this to keep vendor or NPC info visible over the game.</p>
+            <p>General <strong>gameplay tips</strong> for Project Gorgon: food buffs, foraging, inventory management, and similar advice. The Tips section has expandable dropdowns for <strong>Vendors Council</strong> (when vendor sell limits reset), <strong>Who buys what</strong> (NPC shops by area), and <strong>Commands &amp; Emotes</strong> (chat slash commands and emotes). You can <strong>pin</strong> any of these dropdowns to a <strong>separate popup window</strong>: click <strong>Open in window</strong> next to the dropdown title. The popup behaves like the Leveling quick reference — it stays on top, the main app minimizes to the tray while it’s open, and you can close it with <strong>ESC</strong> or the Close button. Use this to keep vendor or NPC info visible over the game.</p>
           </div>
 
           <div class="instructions-block">
             <h2>About</h2>
-            <p>Shows the app <strong>version</strong>, a link to <strong>join the Discord</strong> community, and a <strong>Check for updates</strong> button. If an update is available, you can download it and restart the app to install. The update banner and modal will guide you.</p>
+            <p>Shows the app <strong>version</strong>, a short description of Pie Guy Guide, a link to <strong>Discord</strong>, and a <strong>Check for updates</strong> button. Updates are applied in-place when available.</p>
           </div>
         </section>
 
@@ -709,13 +975,16 @@
             <button class="primary updateBanner-btn" id="updateRestartBtn" style="display:none;">Restart to update</button>
           </div>
           <div class="aboutBox">
-            <p class="aboutText">Come Join us in the multi-game family that has grown over the years!</p>
-            <a class="discord" href="https://discord.gg/sRDMFWk9" target="_blank">Join Our Discord</a>
+            <p class="aboutText">Pie Guy Guide is a companion app for <strong>Project: Gorgon</strong>. It provides map and dungeon overlays, wiki search, leveling tips, boss timers, casino dailies, and vendor tips—all in one window so you can keep focus on the game.</p>
+            <p class="aboutLinks">
+              <a class="discord" href="https://discord.gg/sRDMFWk9" target="_blank" rel="noopener noreferrer">Join Our Discord</a>
+            </p>
             <div class="aboutUpdates">
               <span class="aboutVersion" id="appVersion">v —</span>
               <button type="button" class="primary aboutCheckBtn" id="checkUpdatesBtn">Check for updates</button>
             </div>
-            <p class="aboutReleasesNote muted">Updates are applied in-place (no installer each time). If you're on an older setup, <a href="https://github.com/showuptoscene98/pie-guy-guide/releases" target="_blank">download the latest from Releases</a> once.</p>
+            <p class="aboutReleasesNote muted">Updates are applied in-place (no full installer each time). If you're on an older setup, download the latest from <a href="https://github.com/showuptoscene98/pie-guy-guide/releases" target="_blank" rel="noopener noreferrer">Releases</a> once.</p>
+            <p class="aboutCredit muted">By Mewoicles · MIT License</p>
           </div>
         </section>
       </main>
@@ -736,5 +1005,6 @@
   </div>
 
   <script src="renderer.js"></script>
+  <script type="module" src="auth-supabase.js"></script>
 </body>
 </html>

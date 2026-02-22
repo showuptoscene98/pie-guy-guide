@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Vendors Council — sell limit reset</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #1a1a1a;
+      color: #f2f2f2;
+      overflow: auto;
+    }
+
+    .titlebar {
+      height: 56px;
+      background: #0a0a0a;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      -webkit-app-region: drag;
+      user-select: none;
+    }
+    .titlebar-title {
+      font-weight: 900;
+      font-size: 15px;
+    }
+    .titlebar-hint {
+      font-size: 11px;
+      color: rgba(242,242,242,0.65);
+      margin-top: 2px;
+    }
+    .titlebar-close {
+      -webkit-app-region: no-drag;
+      padding: 8px 14px;
+      font-size: 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: #2f2f2f;
+      color: #f2f2f2;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .titlebar-close:hover {
+      background: #3f3f3f;
+    }
+
+    .content {
+      padding: 16px 20px 24px;
+      max-width: 720px;
+      color: rgba(242,242,242,0.85);
+      line-height: 1.55;
+    }
+    .content p {
+      margin: 10px 0 0 0;
+    }
+    .content p:first-child {
+      margin-top: 0;
+    }
+    .content strong {
+      color: #f2f2f2;
+    }
+  </style>
+</head>
+<body tabindex="0">
+
+  <div class="titlebar">
+    <div>
+      <div class="titlebar-title">Vendors Council — when does sell limit reset?</div>
+      <div class="titlebar-hint">Press ESC to close</div>
+    </div>
+    <button type="button" class="titlebar-close" onclick="window.api.closeOverlay()">Close</button>
+  </div>
+
+  <div class="content">
+    <p>Vendor cash (how much you can sell to them) resets on a <strong>rolling 7-day timer per merchant</strong>, not a fixed weekly reset.</p>
+    <p><strong>How it works:</strong> Each vendor's cash pool resets 7 days after your <strong>first sale to that vendor</strong> in the current cycle. For example, if you first sell to a vendor on Monday at 3 PM, their cash resets the following Monday at 3 PM. There is no server-wide reset day.</p>
+    <p><strong>Check your reset:</strong> Hover your cursor over the merchant's <strong>Council amount</strong> in the UI — a tooltip shows exactly when that vendor's cash will reset.</p>
+    <p>Each merchant's timer is independent (selling to one doesn't affect another). You can rotate between vendors to work around limits. Higher <strong>Favor</strong> with a merchant increases their max cash pool so you can sell more before they run dry.</p>
+  </div>
+
+  <script>
+    window.addEventListener("contextmenu", (e) => e.preventDefault());
+    window.addEventListener("load", () => document.body.focus());
+    window.addEventListener("focus", () => document.body.focus());
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") window.api.closeOverlay();
+    });
+  </script>
+</body>
+</html>
