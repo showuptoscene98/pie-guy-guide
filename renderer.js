@@ -281,8 +281,8 @@ function setupBossTimer() {
 
 setupBossTimer();
 
-// ——— Casino Daily (rotates 11pm CST: Yeti Caves → Wolf Caves → Dark Chapel → Winter Nexus) ———
-const CASINO_DAILY_DUNGEONS = ["Yeti Caves", "Wolf Caves", "Dark Chapel", "Winter Nexus"];
+// ——— Casino Daily (rotates 11pm CST: Winter Nexus → Yeti Caves → Wolf Caves → Dark Chapel) ———
+const CASINO_DAILY_DUNGEONS = ["Winter Nexus", "Yeti Caves", "Wolf Caves", "Dark Chapel"];
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 // 11pm CST = 05:00 UTC next calendar day; current casino day starts at most recent 05:00 UTC
 
@@ -299,8 +299,8 @@ function getStartOfCurrentCasinoDay() {
 function getCasinoDailyIndex() {
   const ref = getStartOfCurrentCasinoDay();
   const period = Math.floor((Date.now() - ref) / MS_PER_DAY);
-  // Current period (0) = Dark Chapel (index 2), then Winter Nexus, Yeti Caves, Wolf Caves
-  return ((2 + period) % 4 + 4) % 4;
+  // Period 0 = Winter Nexus, then Yeti Caves, Wolf Caves, Dark Chapel (repeats)
+  return period % 4;
 }
 
 function getNextCasinoDailyRotation() {
