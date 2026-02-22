@@ -10,6 +10,8 @@ contextBridge.exposeInMainWorld("api", {
   openMap: () => ipcRenderer.send("overlay:openMap"),
   openDungeon: () => ipcRenderer.send("overlay:openDungeon"),
   openLevelingQuickRef: () => ipcRenderer.send("overlay:openLevelingQuickRef"),
+  openTipsVendorsCouncilPopup: () => ipcRenderer.send("overlay:openTipsVendorsCouncil"),
+  openTipsWhoBuysPopup: () => ipcRenderer.send("overlay:openTipsWhoBuys"),
   closeOverlay: () => ipcRenderer.send("overlay:close"),
   setOverlaySize: (width, height) => ipcRenderer.send("overlay:setSize", width, height),
   setOverlayOpacity: (value) => ipcRenderer.send("overlay:setOpacity", value),

@@ -113,6 +113,8 @@ let appTray = null;
 let mapWindow = null;
 let dungeonWindow = null;
 let levelingQuickRefWindow = null;
+let tipsVendorsCouncilWindow = null;
+let tipsWhoBuysWindow = null;
 let mapClickthrough = false;
 let dungeonClickthrough = false;
 let wikiWindow = null;
@@ -328,6 +330,49 @@ function createLevelingQuickRefWindow() {
   const win = new BrowserWindow(opts);
   win.setAlwaysOnTop(true, "screen-saver");
   const filePath = path.join(__dirname, "leveling-quickref.html");
+  win.loadFile(filePath).catch(() => {}).finally(() => {
+    if (!win.isDestroyed()) {
+      win.show();
+      win.focus();
+    }
+  });
+  return win;
+}
+
+function createTipsPopupWindow(htmlFileName) {
+  const opts = {
+    width: QUICKREF_DEFAULT_W,
+    height: QUICKREF_DEFAULT_H,
+    minWidth: QUICKREF_MIN_W,
+    minHeight: QUICKREF_MIN_H,
+    frame: false,
+    thickFrame: false,
+    show: false,
+    transparent: false,
+    backgroundColor: "#1a1a1a",
+    alwaysOnTop: true,
+    webPreferences: {
+      preload: path.join(__dirname, "preload.js"),
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  };
+  if (overlayAnchorTopRight) {
+    try {
+      const primary = screen.getPrimaryDisplay();
+      const work = primary.workArea ?? primary.bounds;
+      opts.x = Math.round(work.x + work.width - QUICKREF_DEFAULT_W - ANCHOR_OFFSET_PX);
+      opts.y = Math.round(work.y + ANCHOR_OFFSET_PX);
+    } catch (_) {
+      opts.x = 0;
+      opts.y = 0;
+    }
+  } else {
+    opts.center = true;
+  }
+  const win = new BrowserWindow(opts);
+  win.setAlwaysOnTop(true, "screen-saver");
+  const filePath = path.join(__dirname, htmlFileName);
   win.loadFile(filePath).catch(() => {}).finally(() => {
     if (!win.isDestroyed()) {
       win.show();
@@ -609,6 +654,43 @@ ipcMain.on("overlay:openLevelingQuickRef", () => {
     });
   } catch (e) {
     console.error("overlay:openLevelingQuickRef", e);
+  }
+});
+
+// Tips popouts: Vendors Council and Who buys what (same flow as leveling quick ref)
+ipcMain.on("overlay:openTipsVendorsCouncil", () => {
+  try {
+    if (tipsVendorsCouncilWindow && !tipsVendorsCouncilWindow.isDestroyed()) {
+      tipsVendorsCouncilWindow.show();
+      tipsVendorsCouncilWindow.focus();
+      return;
+    }
+    if (mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible()) minimizeMainToTray();
+    tipsVendorsCouncilWindow = createTipsPopupWindow("tips-vendors-council.html");
+    tipsVendorsCouncilWindow.on("closed", () => {
+      tipsVendorsCouncilWindow = null;
+      restoreMainIfMinimized();
+    });
+  } catch (e) {
+    console.error("overlay:openTipsVendorsCouncil", e);
+  }
+});
+
+ipcMain.on("overlay:openTipsWhoBuys", () => {
+  try {
+    if (tipsWhoBuysWindow && !tipsWhoBuysWindow.isDestroyed()) {
+      tipsWhoBuysWindow.show();
+      tipsWhoBuysWindow.focus();
+      return;
+    }
+    if (mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible()) minimizeMainToTray();
+    tipsWhoBuysWindow = createTipsPopupWindow("tips-who-buys-what.html");
+    tipsWhoBuysWindow.on("closed", () => {
+      tipsWhoBuysWindow = null;
+      restoreMainIfMinimized();
+    });
+  } catch (e) {
+    console.error("overlay:openTipsWhoBuys", e);
   }
 });
 

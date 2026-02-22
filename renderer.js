@@ -119,7 +119,8 @@ setupOptionsUI();
 // Current zone / dungeon selects (player location for overlay player icon)
 const MAP_ZONES = [
   "AnagogeIsland", "Eltibule", "Fae Realm", "Gazluk", "Ilmari", "Kur Mountains",
-  "Povus", "Rahu", "Serbule", "SerbuleHills", "Sun Vale"
+  "Povus", "Rahu", "Serbule", "SerbuleHills", "Sun Vale",
+  "StagingArea", "PhantomIlmariDesert", "RedWingCasino", "Vidaria", "Statehelm", "WinterNexus"
 ];
 const DUNGEON_ZONES = [
   "Goblin Dungeon Lower", "Goblin Dungeon Upper", "Kur Tower", "Rahu Sewer",
@@ -660,11 +661,65 @@ function setupWikiSearch() {
   });
 }
 
+function setupTipsNpcSearch() {
+  const input = document.getElementById("tipsNpcSearch");
+  const areaList = document.getElementById("tipsAreaList");
+  if (!input || !areaList) return;
+
+  function escapeRegex(s) {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  function runSearch() {
+    const q = input.value.trim().toLowerCase();
+    const detailsList = areaList.querySelectorAll(".tips-area-details");
+
+    detailsList.forEach((details) => {
+      const area = (details.getAttribute("data-area") || "").toLowerCase();
+      const body = details.querySelector(".tips-area-body");
+      if (!body) return;
+
+      let original = body.getAttribute("data-original-html");
+      if (original == null) {
+        original = body.innerHTML;
+        body.setAttribute("data-original-html", original);
+      }
+
+      if (!q) {
+        details.classList.remove("tips-area-hidden");
+        body.innerHTML = original;
+        return;
+      }
+
+      const searchable = (area + " " + (body.textContent || "")).toLowerCase();
+      if (searchable.indexOf(q) === -1) {
+        details.classList.add("tips-area-hidden");
+        return;
+      }
+
+      details.classList.remove("tips-area-hidden");
+      const escaped = escapeRegex(q);
+      try {
+        body.innerHTML = original.replace(
+          new RegExp(`(${escaped})`, "gi"),
+          "<mark class=\"tips-search-highlight\">$1</mark>"
+        );
+      } catch (_) {
+        body.innerHTML = original;
+      }
+    });
+  }
+
+  input.addEventListener("input", runSearch);
+  input.addEventListener("search", runSearch);
+}
+
 // run after DOM loads
 window.addEventListener("DOMContentLoaded", () => {
   setupLevelingAccordion();
   setupLevelingAreaDropdowns();
   setupLevelingMapLinks();
+  setupTipsNpcSearch();
   setupUpdaterUI();
   setupPgNews();
   setupWikiSearch();

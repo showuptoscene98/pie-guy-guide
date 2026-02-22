@@ -24,6 +24,13 @@ const MAP_SOURCES = [
   { appFile: "Serbule.jpg", wikiFile: "SerbuleMarkedMap.jpg" },
   { appFile: "SerbuleHills.jpg", wikiFile: "SerbuleHillsMarkedMap.jpg" },
   { appFile: "Sun Vale.jpg", wikiFile: "SunValeMarkedMap.jpg" },
+  // Zones from https://wiki.projectgorgon.com/wiki/Zones (app uses .png placeholders; overwrite with .jpg when wiki has MarkedMap)
+  { appFile: "StagingArea.jpg", wikiFile: "StagingAreaMarkedMap.jpg" },
+  { appFile: "PhantomIlmariDesert.jpg", wikiFile: "PhantomIlmariDesertMarkedMap.jpg" },
+  { appFile: "RedWingCasino.jpg", wikiFile: "RedWingCasinoMarkedMap.jpg" },
+  { appFile: "Vidaria.jpg", wikiFile: "VidariaMarkedMap.jpg" },
+  { appFile: "Statehelm.jpg", wikiFile: "StatehelmMarkedMap.jpg" },
+  { appFile: "WinterNexus.jpg", wikiFile: "WinterNexusMarkedMap.jpg" },
 ];
 
 // App display name -> Wiki File: name (PlayerMap = in-game style, detailed). Optional appFile = exact output filename.

@@ -1111,6 +1111,23 @@ kbd{
   margin-top: 0;
 }
 
+.tips-pin-btn{
+  margin-left: 8px;
+  padding: 2px 8px;
+  font-size: 11px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--btnGrey);
+  color: var(--muted);
+  cursor: pointer;
+  font-weight: 600;
+  -webkit-app-region: no-drag;
+}
+.tips-pin-btn:hover{
+  background: var(--btnHover);
+  color: var(--text);
+}
+
 .tips-npc-table{
   width: 100%;
   margin-top: 10px;
@@ -1135,3 +1152,50 @@ kbd{
 .tips-npc-table td:nth-child(2){ min-width: 10em; }
 .tips-npc-table td:nth-child(3){ white-space: nowrap; width: 1%; }
 .tips-npc-table td:last-child{ color: var(--muted); }
+
+.tips-npc-search-wrap{
+  margin-top: 10px;
+  margin-bottom: 12px;
+}
+.tips-npc-search-label{
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.tips-npc-search-input{
+  width: 100%;
+  max-width: 360px;
+  padding: 8px 12px;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--contentGrey);
+  color: var(--text);
+}
+.tips-npc-search-input::placeholder{
+  color: var(--muted);
+}
+.tips-npc-search-input:focus{
+  outline: none;
+  border-color: rgba(255,204,77,0.4);
+}
+
+.tips-area-list .tips-area-details{
+  margin-top: 8px;
+}
+.tips-area-list .tips-area-details.tips-area-hidden{
+  display: none;
+}
+.tips-area-list .tips-area-details .tips-area-body{
+  padding: 0 0 8px 14px;
+}
+.tips-area-list .tips-npc-table{
+  margin-top: 6px;
+}
+.tips-search-highlight{
+  background: var(--goldSoft);
+  color: var(--gold);
+  padding: 0 1px;
+  border-radius: 2px;
+}

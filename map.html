@@ -335,19 +335,31 @@
     window.api.onOverlayTitleBarVisible?.(setTitleBarVisible);
   }
 
+  // value = zone id (storage/sync), label = dropdown text, file = filename in maps/
   const maps = [
-    "AnagogeIsland",
-    "Eltibule",
-    "Fae Realm",
-    "Gazluk",
-    "Ilmari",
-    "Kur Mountains",
-    "Povus",
-    "Rahu",
-    "Serbule",
-    "SerbuleHills",
-    "Sun Vale"
+    { value: "AnagogeIsland", label: "Anagoge Island", file: "AnagogeIsland.jpg" },
+    { value: "Eltibule", label: "Eltibule", file: "Eltibule.jpg" },
+    { value: "Fae Realm", label: "Fae Realm", file: "Fae Realm.jpg" },
+    { value: "Gazluk", label: "Gazluk", file: "Gazluk.jpg" },
+    { value: "Ilmari", label: "Ilmari", file: "Ilmari.jpg" },
+    { value: "Kur Mountains", label: "Kur Mountains", file: "Kur Mountains.jpg" },
+    { value: "Povus", label: "Povus", file: "Povus.jpg" },
+    { value: "Rahu", label: "Rahu", file: "Rahu.jpg" },
+    { value: "Serbule", label: "Serbule", file: "Serbule.jpg" },
+    { value: "SerbuleHills", label: "Serbule Hills", file: "SerbuleHills.jpg" },
+    { value: "Sun Vale", label: "Sun Vale", file: "Sun Vale.jpg" },
+    { value: "StagingArea", label: "Staging Area", file: "StagingArea.png" },
+    { value: "PhantomIlmariDesert", label: "Phantom Ilmari Desert", file: "PhantomIlmariDesert.png" },
+    { value: "RedWingCasino", label: "Red Wing Casino", file: "RedWingCasino.png" },
+    { value: "Vidaria", label: "Vidaria", file: "Vidaria.png" },
+    { value: "Statehelm", label: "Statehelm", file: "Statehelm.png" },
+    { value: "WinterNexus", label: "Winter Nexus", file: "WinterNexus.png" }
   ];
+  const mapValues = maps.map((m) => m.value);
+  function getMapFile(value) {
+    const entry = maps.find((m) => m.value === value);
+    return entry ? entry.file : value + ".jpg";
+  }
 
   const mapSelect = document.getElementById("mapSelect");
   const mapImage = document.getElementById("mapImage");
@@ -366,23 +378,24 @@
 
   const MAP_SIDEBAR_WIDTH = 160;
 
-  function loadMap(name){
+  function loadMap(value){
+    const file = getMapFile(value);
     mapImage.onload = function(){
       if (window.api && window.api.setOverlaySize && mapImage.naturalWidth && mapImage.naturalHeight) {
         window.api.setOverlaySize(MAP_SIDEBAR_WIDTH + mapImage.naturalWidth, mapImage.naturalHeight);
       }
       loadPlayerIconPosition();
     };
-    mapImage.src = `maps/${name}.jpg`;
+    mapImage.src = "maps/" + file;
     scale = 0.8; x = 40; y = 40;
     applyTransform();
   }
 
   // Populate dropdown
-  maps.forEach((name) => {
+  maps.forEach((m) => {
     const opt = document.createElement("option");
-    opt.value = name;
-    opt.textContent = name;
+    opt.value = m.value;
+    opt.textContent = m.label;
     mapSelect.appendChild(opt);
   });
 
@@ -404,8 +417,8 @@
     });
   }
 
-  loadMap(maps[0]);
-  mapSelect.value = maps[0];
+  loadMap(maps[0].value);
+  mapSelect.value = maps[0].value;
 
   // Player icon: position (normalized 0-1), draggable, show when zone matches
   const playerIcon = document.getElementById("playerIcon");
@@ -489,7 +502,7 @@
 
   function applyZoneFromApp(zone) {
     currentMapZoneFromApp = zone || "";
-    if (zone && maps.includes(zone) && mapSelect.value !== zone) {
+    if (zone && mapValues.includes(zone) && mapSelect.value !== zone) {
       mapSelect.value = zone;
       loadMap(zone);
     }
@@ -500,7 +513,7 @@
     window.api.getCurrentMapZone?.().then(applyZoneFromApp);
     window.api.onCurrentMapZone?.(applyZoneFromApp);
     window.api.onOverlaySwitchToMap?.((zone) => {
-      if (zone && maps.includes(zone)) {
+      if (zone && mapValues.includes(zone)) {
         mapSelect.value = zone;
         loadMap(zone);
         currentMapZoneFromApp = zone;
