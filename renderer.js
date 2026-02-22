@@ -23,6 +23,7 @@ function go(name) {
     dungeons: "navDungeons",
     leveling: "navLeveling",
     "boss-timer": "navBossTimer",
+    lfg: "navLfg",
     "casino-daily": "navCasinoDaily",
     tips: "navTips",
     instructions: "navInstructions",
@@ -34,6 +35,105 @@ function go(name) {
 
 // Default page on launch:
 go("about");
+
+// ——— Startup modal: character + server (shown via Connect on LFG page) ———
+function setupStartupModal() {
+  const modal = document.getElementById("startupModal");
+  const characterInput = document.getElementById("startupCharacterName");
+  const serverSelect = document.getElementById("startupServer");
+  const errorEl = document.getElementById("startupModalError");
+  const submitBtn = document.getElementById("startupSubmitBtn");
+  const skipBtn = document.getElementById("startupSkipBtn");
+  if (!modal) return;
+
+  function hideModal() {
+    modal.classList.add("hidden");
+  }
+  function hideError() {
+    if (errorEl) {
+      errorEl.classList.add("hidden");
+      errorEl.textContent = "";
+    }
+  }
+  function showError(msg) {
+    if (errorEl) {
+      errorEl.textContent = msg;
+      errorEl.classList.remove("hidden");
+    }
+  }
+
+  function showModal() {
+    hideError();
+    if (window.api && window.api.getLfgPlayerName && window.api.getLfgServer) {
+      Promise.all([window.api.getLfgPlayerName(), window.api.getLfgServer()]).then(([name, server]) => {
+        if (characterInput) characterInput.value = typeof name === "string" ? name : "";
+        if (serverSelect) serverSelect.value = (typeof server === "string" && server.trim()) ? server.trim() : "1";
+      }).catch(() => {});
+    } else {
+      if (characterInput) characterInput.value = "";
+      if (serverSelect) serverSelect.value = "1";
+    }
+    modal.classList.remove("hidden");
+  }
+
+  window.showLfgConnectModal = showModal;
+
+  function onContinue() {
+    hideError();
+    const name = (characterInput && characterInput.value || "").trim();
+    const server = (serverSelect && serverSelect.value || "1").trim();
+    if (!name) {
+      showError("Please enter your character name.");
+      return;
+    }
+    if (window.api) {
+      if (window.api.setLfgPlayerName) window.api.setLfgPlayerName(name);
+      if (window.api.setLfgServer) window.api.setLfgServer(server);
+      if (window.api.setLfgStartupDismissed) window.api.setLfgStartupDismissed(false);
+    }
+    window.__lfgPlayerName = name;
+    window.__lfgServer = server;
+    hideModal();
+  }
+
+  if (submitBtn) {
+    submitBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      onContinue();
+    });
+  }
+  if (characterInput && serverSelect) {
+    characterInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); onContinue(); }
+    });
+    serverSelect.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); onContinue(); }
+    });
+  }
+
+  if (skipBtn) {
+    skipBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      hideError();
+      if (window.api && window.api.setLfgStartupDismissed) window.api.setLfgStartupDismissed(true);
+      hideModal();
+    });
+  }
+
+  document.addEventListener("keydown", function onEsc(e) {
+    if (e.key !== "Escape") return;
+    if (!modal || modal.classList.contains("hidden")) return;
+    e.preventDefault();
+    hideError();
+    if (window.api && window.api.setLfgStartupDismissed) window.api.setLfgStartupDismissed(true);
+    hideModal();
+  });
+
+  const connectBtn = document.getElementById("lfgConnectBtn");
+  if (connectBtn) connectBtn.addEventListener("click", () => showModal());
+}
 
 // ——— Opacity slider (sidebar) ———
 function setupOpacitySlider() {
@@ -65,12 +165,31 @@ function setupOptionsUI() {
   const dropdown = document.getElementById("optionsDropdown");
   const anchorCheck = document.getElementById("optionAnchorOverlays");
   const themeSelect = document.getElementById("optionTheme");
+  const lfgPlayerInput = document.getElementById("optionLfgPlayerName");
+  const lfgServerInput = document.getElementById("optionLfgServerUrl");
+  const lfgServerSelect = document.getElementById("optionLfgServer");
   if (!cogBtn || !dropdown || !anchorCheck || !window.api) return;
 
   function openDropdown() {
     dropdown.classList.remove("hidden");
+    if (window.__refreshAuthUI) window.__refreshAuthUI();
     window.api.getOverlayAnchorPreference().then((v) => {
       anchorCheck.checked = !!v;
+    });
+    window.api.getLfgPlayerName().then((v) => {
+      const s = (v || "").trim();
+      if (lfgPlayerInput) lfgPlayerInput.value = s;
+      window.__lfgPlayerName = s;
+    });
+    window.api.getLfgServerUrl().then((v) => {
+      const s = (v || "").trim();
+      if (lfgServerInput) lfgServerInput.value = s;
+      window.__lfgBaseUrl = s;
+    });
+    window.api.getLfgServer().then((v) => {
+      const s = (v || "").trim() || "1";
+      if (lfgServerSelect) lfgServerSelect.value = s;
+      window.__lfgServer = s;
     });
   }
 
@@ -100,6 +219,41 @@ function setupOptionsUI() {
       applyTheme(v);
     });
   }
+  if (lfgPlayerInput) {
+    const syncLfgPlayer = () => {
+      const v = lfgPlayerInput.value.trim();
+      window.api.setLfgPlayerName(v);
+      window.__lfgPlayerName = v;
+    };
+    lfgPlayerInput.addEventListener("change", syncLfgPlayer);
+    lfgPlayerInput.addEventListener("blur", syncLfgPlayer);
+  }
+  if (lfgServerInput) {
+    const syncLfgServer = () => {
+      const v = lfgServerInput.value.trim();
+      window.api.setLfgServerUrl(v);
+      window.__lfgBaseUrl = v;
+    };
+    lfgServerInput.addEventListener("change", syncLfgServer);
+    lfgServerInput.addEventListener("blur", syncLfgServer);
+  }
+  if (lfgServerSelect) {
+    lfgServerSelect.addEventListener("change", () => {
+      const v = (lfgServerSelect.value || "1").trim();
+      window.api.setLfgServer(v);
+      window.__lfgServer = v;
+      if (window.__saveProfileToSupabase) window.__saveProfileToSupabase();
+    });
+  }
+
+  if (lfgPlayerInput) {
+    lfgPlayerInput.addEventListener("change", () => { if (window.__saveProfileToSupabase) window.__saveProfileToSupabase(); });
+    lfgPlayerInput.addEventListener("blur", () => { if (window.__saveProfileToSupabase) window.__saveProfileToSupabase(); });
+  }
+  if (lfgServerInput) {
+    lfgServerInput.addEventListener("change", () => { if (window.__saveProfileToSupabase) window.__saveProfileToSupabase(); });
+    lfgServerInput.addEventListener("blur", () => { if (window.__saveProfileToSupabase) window.__saveProfileToSupabase(); });
+  }
 
   document.addEventListener("click", (e) => {
     if (!dropdown.classList.contains("hidden") && !e.target.closest(".options-wrap")) closeDropdown();
@@ -113,20 +267,122 @@ function setupOptionsUI() {
   });
 }
 
+// ——— Supabase auth: account UI and profile sync (when config is present) ———
+function setupSupabaseAuth(supabase) {
+  const accountRow = document.getElementById("optionsAccountRow");
+  const loggedOut = document.getElementById("authLoggedOut");
+  const loggedIn = document.getElementById("authLoggedIn");
+  const authUserName = document.getElementById("authUserName");
+  const loginBtn = document.getElementById("authLoginBtn");
+  const signOutBtn = document.getElementById("authSignOutBtn");
+  const AUTH_CALLBACK_SCHEME = "pieguyguide://auth/callback";
+
+  if (!accountRow || !window.api || !window.api.onAuthCallback) return;
+
+  accountRow.style.display = "";
+
+  function parseHashParams(hash) {
+    const params = {};
+    if (!hash || hash.charAt(0) === "#") hash = hash.slice(1);
+    hash.split("&").forEach((pair) => {
+      const i = pair.indexOf("=");
+      if (i === -1) return;
+      params[decodeURIComponent(pair.slice(0, i))] = decodeURIComponent(pair.slice(i + 1));
+    });
+    return params;
+  }
+
+  function refreshAuthUI() {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (loggedOut) loggedOut.style.display = session ? "none" : "";
+      if (loggedIn) loggedIn.style.display = session ? "" : "none";
+      if (authUserName) authUserName.textContent = session?.user?.user_metadata?.full_name || session?.user?.email || "Logged in";
+      if (session) applyProfileToLocal();
+    });
+  }
+
+  function applyProfileToLocal() {
+    supabase.from("profiles").select("character_name, server, lfg_server_url").single()
+      .then(({ data }) => {
+        if (!data) return;
+        if (data.character_name != null && window.api.setLfgPlayerName) {
+          window.api.setLfgPlayerName(String(data.character_name || "").trim());
+          window.__lfgPlayerName = String(data.character_name || "").trim();
+        }
+        if (data.server != null && window.api.setLfgServer) {
+          const s = String(data.server || "1").trim() || "1";
+          window.api.setLfgServer(s);
+          window.__lfgServer = s;
+        }
+        if (data.lfg_server_url != null && window.api.setLfgServerUrl) {
+          window.api.setLfgServerUrl(String(data.lfg_server_url || "").trim());
+          window.__lfgBaseUrl = String(data.lfg_server_url || "").trim();
+        }
+        const playerInput = document.getElementById("optionLfgPlayerName");
+        const serverSelect = document.getElementById("optionLfgServer");
+        const serverUrlInput = document.getElementById("optionLfgServerUrl");
+        if (playerInput) playerInput.value = (data.character_name || "").trim();
+        if (serverSelect) serverSelect.value = (data.server || "1").trim() || "1";
+        if (serverUrlInput) serverUrlInput.value = (data.lfg_server_url || "").trim();
+      })
+      .catch(() => {});
+  }
+
+  window.__refreshAuthUI = refreshAuthUI;
+  window.__saveProfileToSupabase = function () {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session?.user?.id) return;
+      const playerInput = document.getElementById("optionLfgPlayerName");
+      const serverSelect = document.getElementById("optionLfgServer");
+      const serverUrlInput = document.getElementById("optionLfgServerUrl");
+      const character_name = (playerInput && playerInput.value) ? String(playerInput.value).trim() : "";
+      const server = (serverSelect && serverSelect.value) ? String(serverSelect.value).trim() || "1" : "1";
+      const lfg_server_url = (serverUrlInput && serverUrlInput.value) ? String(serverUrlInput.value).trim() : "";
+      supabase.from("profiles").upsert(
+        { id: session.user.id, character_name, server, lfg_server_url, updated_at: new Date().toISOString() },
+        { onConflict: "id" }
+      ).then(() => {}).catch(() => {});
+    });
+  };
+
+  window.api.onAuthCallback((url) => {
+    if (!url || url.indexOf(AUTH_CALLBACK_SCHEME) === -1) return;
+    const hashStart = url.indexOf("#");
+    const hash = hashStart >= 0 ? url.slice(hashStart) : "";
+    const params = parseHashParams(hash);
+    const access_token = params.access_token;
+    const refresh_token = params.refresh_token;
+    if (access_token) {
+      supabase.auth.setSession({ access_token, refresh_token: refresh_token || "" }).then(() => {
+        refreshAuthUI();
+      }).catch(() => {});
+    }
+  });
+
+  if (loginBtn) {
+    loginBtn.addEventListener("click", () => {
+      supabase.auth.signInWithOAuth({
+        provider: "discord",
+        options: { redirectTo: AUTH_CALLBACK_SCHEME }
+      }).then(({ data }) => {
+        if (data?.url && window.api.authOpenExternal) window.api.authOpenExternal(data.url);
+      }).catch(() => {});
+    });
+  }
+  if (signOutBtn) {
+    signOutBtn.addEventListener("click", () => {
+      supabase.auth.signOut().then(() => refreshAuthUI());
+    });
+  }
+
+  refreshAuthUI();
+}
+window.__setupSupabaseAuth = setupSupabaseAuth;
+
 setupOpacitySlider();
 setupOptionsUI();
 
-// Current zone / dungeon selects (player location for overlay player icon)
-const MAP_ZONES = [
-  "AnagogeIsland", "Eltibule", "Fae Realm", "Gazluk", "Ilmari", "Kur Mountains",
-  "Povus", "Rahu", "Serbule", "SerbuleHills", "Sun Vale",
-  "StagingArea", "PhantomIlmariDesert", "RedWingCasino", "Vidaria", "Statehelm", "WinterNexus"
-];
-const DUNGEON_ZONES = [
-  "Goblin Dungeon Lower", "Goblin Dungeon Upper", "Kur Tower", "Rahu Sewer",
-  "Serbule Crypt", "Wolf Cave", "Yeti Cave", "Myconian Cave", "Labyrinth Map", "Dark Chapel"
-];
-
+// Current zone / dungeon selects (player location for overlay player icon) — populated from local maps/ and dungeons/
 function setupZoneSelects() {
   const mapSelect = document.getElementById("currentMapZoneSelect");
   const dungeonSelect = document.getElementById("currentDungeonZoneSelect");
@@ -138,15 +394,20 @@ function setupZoneSelects() {
     none.value = "";
     none.textContent = "None";
     mapSelect.appendChild(none);
-    MAP_ZONES.forEach((name) => {
-      const opt = document.createElement("option");
-      opt.value = name;
-      opt.textContent = name;
-      mapSelect.appendChild(opt);
-    });
-    window.api.getCurrentMapZone().then((v) => {
-      if (v && MAP_ZONES.includes(v)) mapSelect.value = v;
-    });
+    const fillMapSelect = (entries) => {
+      (entries || []).forEach((m) => {
+        const opt = document.createElement("option");
+        opt.value = m.value;
+        opt.textContent = m.label;
+        mapSelect.appendChild(opt);
+      });
+      window.api.getCurrentMapZone().then((v) => {
+        if (v && (entries || []).some((m) => m.value === v)) mapSelect.value = v;
+      });
+    };
+    if (window.api.getMapFiles) {
+      window.api.getMapFiles().then(fillMapSelect);
+    }
     mapSelect.addEventListener("change", () => {
       window.api.setCurrentMapZone(mapSelect.value);
     });
@@ -158,15 +419,20 @@ function setupZoneSelects() {
     none.value = "";
     none.textContent = "None";
     dungeonSelect.appendChild(none);
-    DUNGEON_ZONES.forEach((name) => {
-      const opt = document.createElement("option");
-      opt.value = name;
-      opt.textContent = name;
-      dungeonSelect.appendChild(opt);
-    });
-    window.api.getCurrentDungeonZone().then((v) => {
-      if (v && DUNGEON_ZONES.includes(v)) dungeonSelect.value = v;
-    });
+    const fillDungeonSelect = (entries) => {
+      (entries || []).forEach((d) => {
+        const opt = document.createElement("option");
+        opt.value = d.value;
+        opt.textContent = d.label;
+        dungeonSelect.appendChild(opt);
+      });
+      window.api.getCurrentDungeonZone().then((v) => {
+        if (v && (entries || []).some((d) => d.value === v)) dungeonSelect.value = v;
+      });
+    };
+    if (window.api.getDungeonFiles) {
+      window.api.getDungeonFiles().then(fillDungeonSelect);
+    }
     dungeonSelect.addEventListener("change", () => {
       window.api.setCurrentDungeonZone(dungeonSelect.value);
     });
@@ -714,8 +980,455 @@ function setupTipsNpcSearch() {
   input.addEventListener("search", runSearch);
 }
 
+// ——— LFG / Group finder ———
+const LFG_DEFAULT_SERVER = "https://pie-guy-guide.onrender.com";
+const LFG_TAGS = ["Casino Daily", "Grinding", "Unlocking Content", "Questing"];
+const LFG_LANGUAGES = ["English", "Spanish", "Russian", "Portuguese"];
+
+function setupLfgPage() {
+  const listEl = document.getElementById("lfgPostsList");
+  const loadingEl = document.getElementById("lfgLoading");
+  const errorEl = document.getElementById("lfgError");
+  const refreshBtn = document.getElementById("lfgRefreshBtn");
+  const createBtn = document.getElementById("lfgCreateBtn");
+  const titleInput = document.getElementById("lfgPostTitle");
+  const slotsInput = document.getElementById("lfgPostSlots");
+  const descriptionInput = document.getElementById("lfgPostDescription");
+  const tagsListEl = document.getElementById("lfgPostTagsList");
+  const languageSelect = document.getElementById("lfgPostLanguage");
+  const filterTag = document.getElementById("lfgFilterTag");
+  const filterLanguage = document.getElementById("lfgFilterLanguage");
+  const serverTabs = document.querySelectorAll(".lfg-tab");
+
+  if (!listEl || !window.api) return;
+
+  if (tagsListEl) {
+    LFG_TAGS.forEach((tag) => {
+      const label = document.createElement("label");
+      label.className = "lfg-tag-check";
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.value = tag;
+      cb.className = "lfg-tag-checkbox";
+      label.appendChild(cb);
+      label.appendChild(document.createTextNode(" " + tag));
+      tagsListEl.appendChild(label);
+    });
+  }
+
+  function setLoading(loading) {
+    if (loadingEl) loadingEl.classList.toggle("hidden", !loading);
+    if (errorEl) errorEl.classList.add("hidden");
+  }
+  function setError(msg) {
+    if (loadingEl) loadingEl.classList.add("hidden");
+    if (errorEl) {
+      errorEl.textContent = msg;
+      errorEl.classList.remove("hidden");
+    }
+  }
+  function clearList() {
+    Array.from(listEl.children).forEach((c) => {
+      if (c.id !== "lfgLoading" && c.id !== "lfgError") c.remove();
+    });
+  }
+
+  function baseUrl() {
+    const u = window.__lfgBaseUrl;
+    return (typeof u === "string" && u.trim()) ? u.trim().replace(/\/$/, "") : LFG_DEFAULT_SERVER;
+  }
+  function myName() {
+    const n = window.__lfgPlayerName;
+    return typeof n === "string" ? n.trim() : "";
+  }
+  function currentServer() {
+    const s = window.__lfgServer;
+    return (typeof s === "string" && s.trim()) ? s.trim() : "1";
+  }
+
+  function apiFetch(path, opts) {
+    const url = (baseUrl().replace(/\/$/, "") + path).trim();
+    if (!url || url === path) return Promise.reject(new Error("Set LFG server URL in Options"));
+    return fetch(url, { ...opts, headers: { "Content-Type": "application/json", ...(opts && opts.headers) } });
+  }
+
+  function parseJsonResponse(r, defaultErrorMsg) {
+    return r.text().then((text) => {
+      if (!r.ok) {
+        let msg = defaultErrorMsg || r.statusText || "Request failed";
+        try {
+          const j = JSON.parse(text);
+          if (j && typeof j.error === "string") msg = j.error;
+        } catch (_) {
+          if (text && text.trim()) msg = text.trim();
+        }
+        return Promise.reject(new Error(msg));
+      }
+      if (r.status === 204 || !text || !text.trim()) return null;
+      try {
+        return JSON.parse(text);
+      } catch (_) {
+        return Promise.reject(new Error("Invalid response from server"));
+      }
+    });
+  }
+
+  function loadPosts(showLoading) {
+    if (showLoading) setLoading(true);
+    const server = currentServer();
+    let path = "/api/posts?server=" + encodeURIComponent(server);
+    const tag = filterTag && filterTag.value ? filterTag.value.trim() : "";
+    const lang = filterLanguage && filterLanguage.value ? filterLanguage.value.trim() : "";
+    if (tag) path += "&tag=" + encodeURIComponent(tag);
+    if (lang) path += "&language=" + encodeURIComponent(lang);
+    apiFetch(path)
+      .then((r) => parseJsonResponse(r, "Failed to load posts. Is the LFG server running?"))
+      .then((posts) => {
+        setLoading(false);
+        clearList();
+        if (!posts || posts.length === 0) {
+          listEl.appendChild(Object.assign(document.createElement("p"), { className: "muted", textContent: "No posts yet. Create one above." }));
+          return;
+        }
+        posts.forEach((post) => renderPost(post));
+      })
+      .catch((e) => {
+        setError(e.message || "Failed to load posts. Is the LFG server running?");
+      });
+  }
+
+  function getPostDetail(postId) {
+    return apiFetch("/api/posts/" + postId)
+      .then((r) => parseJsonResponse(r, "Failed to load post"));
+  }
+
+  function renderPost(post) {
+    const isAuthor = myName() && post.authorName && post.authorName.toLowerCase() === myName().toLowerCase();
+    const interestedCount = post.interestedCount ?? (post.interested ? post.interested.length : 0);
+    const full = interestedCount >= post.slots;
+    const list = post.interested || [];
+    const amInterested = list.some((n) => n.toLowerCase() === myName().toLowerCase());
+
+    const card = document.createElement("div");
+    card.className = "lfg-post-card";
+    card.dataset.postId = String(post.id);
+
+    const head = document.createElement("div");
+    head.className = "lfg-post-head";
+    const title = document.createElement("span");
+    title.className = "lfg-post-title";
+    title.textContent = post.text || "Untitled";
+    const meta = document.createElement("span");
+    meta.className = "lfg-post-meta muted";
+    const metaParts = ["by " + (post.authorName || "?"), interestedCount + "/" + post.slots + " slots"];
+    if (post.language) metaParts.push(post.language);
+    meta.textContent = metaParts.join(" · ");
+    head.appendChild(title);
+    head.appendChild(meta);
+    card.appendChild(head);
+
+    if (post.description && String(post.description).trim()) {
+      const descEl = document.createElement("p");
+      descEl.className = "lfg-post-description muted";
+      descEl.textContent = post.description.trim();
+      card.appendChild(descEl);
+    }
+    const postTags = post.tags;
+    if (Array.isArray(postTags) && postTags.length > 0) {
+      const tagsWrap = document.createElement("div");
+      tagsWrap.className = "lfg-post-tags";
+      postTags.forEach((t) => {
+        if (!t) return;
+        const pill = document.createElement("span");
+        pill.className = "lfg-post-tag-pill";
+        pill.textContent = String(t).trim();
+        tagsWrap.appendChild(pill);
+      });
+      card.appendChild(tagsWrap);
+    }
+
+    if (isAuthor) {
+      const interestedSection = document.createElement("div");
+      interestedSection.className = "lfg-post-interested-section";
+      const toggleBtn = document.createElement("button");
+      toggleBtn.type = "button";
+      toggleBtn.className = "lfg-post-toggle-btn";
+      toggleBtn.textContent = "Interested (" + interestedCount + ")";
+      const listDiv = document.createElement("div");
+      listDiv.className = "lfg-post-interested-list hidden";
+      listDiv.innerHTML = "";
+
+      function refreshInterestedList() {
+        getPostDetail(post.id).then((p) => {
+          listDiv.innerHTML = "";
+          (p.interested || []).forEach((playerName) => {
+            const row = document.createElement("div");
+            row.className = "lfg-interested-row";
+            row.innerHTML = "<span class=\"lfg-interested-name\">" + escapeHtml(playerName) + "</span>";
+            const inviteBtn = document.createElement("button");
+            inviteBtn.type = "button";
+            inviteBtn.className = "btn lfg-btn-small primary";
+            inviteBtn.textContent = "Invite";
+            inviteBtn.addEventListener("click", () => {
+              window.api.copyToClipboard("/pinvite " + playerName);
+              inviteBtn.textContent = "Copied!";
+              setTimeout(() => { inviteBtn.textContent = "Invite"; }, 2000);
+            });
+            const removeBtn = document.createElement("button");
+            removeBtn.type = "button";
+            removeBtn.className = "btn lfg-btn-small";
+            removeBtn.textContent = "Remove";
+            removeBtn.addEventListener("click", () => {
+              removeInterest(post.id, playerName, post.authorName).then(() => {
+                refreshInterestedList();
+                loadPosts(false);
+              });
+            });
+            row.appendChild(inviteBtn);
+            row.appendChild(removeBtn);
+            listDiv.appendChild(row);
+          });
+          if ((p.interested || []).length === 0) {
+            const empty = document.createElement("p");
+            empty.className = "muted";
+            empty.textContent = "No one interested yet.";
+            listDiv.appendChild(empty);
+          }
+          toggleBtn.textContent = "Interested (" + (p.interested || []).length + ")";
+        });
+      }
+
+      toggleBtn.addEventListener("click", () => {
+        const open = !listDiv.classList.contains("hidden");
+        if (open) {
+          listDiv.classList.add("hidden");
+        } else {
+          listDiv.classList.remove("hidden");
+          refreshInterestedList();
+        }
+      });
+      interestedSection.appendChild(toggleBtn);
+      interestedSection.appendChild(listDiv);
+      const deleteBtn = document.createElement("button");
+      deleteBtn.type = "button";
+      deleteBtn.className = "btn lfg-btn-small lfg-delete-btn";
+      deleteBtn.textContent = "Delete post";
+      deleteBtn.addEventListener("click", () => {
+        if (!confirm("Delete this post? This cannot be undone.")) return;
+        deletePost(post.id).then(() => loadPosts(false)).catch((e) => setError(e.message || "Failed to delete"));
+      });
+      interestedSection.appendChild(deleteBtn);
+      card.appendChild(interestedSection);
+    } else {
+      const actions = document.createElement("div");
+      actions.className = "lfg-post-actions";
+      if (amInterested) {
+        const unBtn = document.createElement("button");
+        unBtn.type = "button";
+        unBtn.className = "btn lfg-btn-small";
+        unBtn.textContent = "Uninterested";
+        unBtn.addEventListener("click", () => {
+          removeInterest(post.id, myName(), myName()).then(() => loadPosts(false));
+        });
+        actions.appendChild(unBtn);
+      } else if (full) {
+        const fullSpan = document.createElement("span");
+        fullSpan.className = "muted";
+        fullSpan.textContent = "Full";
+        actions.appendChild(fullSpan);
+      } else {
+        const intBtn = document.createElement("button");
+        intBtn.type = "button";
+        intBtn.className = "btn lfg-btn-small primary";
+        intBtn.textContent = "Interested";
+        intBtn.addEventListener("click", () => {
+          addInterest(post.id).then(() => {
+            window.api.copyToClipboard("/tell " + (post.authorName || "").trim() + " I am interested in joining");
+            intBtn.textContent = "Copied — paste in game";
+            loadPosts(false);
+            setTimeout(() => { intBtn.textContent = "Interested"; }, 2500);
+          });
+        });
+        actions.appendChild(intBtn);
+      }
+      card.appendChild(actions);
+    }
+
+    // Comments section (all posts)
+    const commentCount = post.commentCount ?? 0;
+    const commentsSection = document.createElement("div");
+    commentsSection.className = "lfg-comments-section";
+    const commentsToggle = document.createElement("button");
+    commentsToggle.type = "button";
+    commentsToggle.className = "lfg-comments-toggle";
+    commentsToggle.textContent = "Comments (" + commentCount + ")";
+    const commentsListDiv = document.createElement("div");
+    commentsListDiv.className = "lfg-comments-list hidden";
+    const commentForm = document.createElement("div");
+    commentForm.className = "lfg-comment-form";
+    const commentInput = document.createElement("input");
+    commentInput.type = "text";
+    commentInput.className = "lfg-comment-input";
+    commentInput.placeholder = "Add a comment…";
+    const commentSubmit = document.createElement("button");
+    commentSubmit.type = "button";
+    commentSubmit.className = "primary lfg-comment-submit";
+    commentSubmit.textContent = "Post";
+    commentForm.appendChild(commentInput);
+    commentForm.appendChild(commentSubmit);
+
+    function refreshComments() {
+      apiFetch("/api/posts/" + post.id + "/comments")
+        .then((r) => r.text().then((text) => {
+          if (!r.ok) return [];
+          try { return (text && text.trim()) ? JSON.parse(text) : []; } catch (_) { return []; }
+        }))
+        .then((commentsList) => {
+          const list = Array.isArray(commentsList) ? commentsList : [];
+          commentsListDiv.innerHTML = "";
+          list.forEach((c) => {
+            const item = document.createElement("div");
+            item.className = "lfg-comment-item";
+            const meta = document.createElement("div");
+            meta.className = "lfg-comment-meta";
+            meta.textContent = (c.authorName || "?") + " · " + (c.createdAt ? new Date(c.createdAt).toLocaleString() : "");
+            const text = document.createElement("div");
+            text.className = "lfg-comment-text";
+            text.textContent = c.text || "";
+            item.appendChild(meta);
+            item.appendChild(text);
+            commentsListDiv.appendChild(item);
+          });
+          commentsListDiv.appendChild(commentForm);
+          commentsToggle.textContent = "Comments (" + list.length + ")";
+        })
+        .catch(() => {
+          commentsListDiv.innerHTML = "";
+          commentsListDiv.appendChild(commentForm);
+          commentsToggle.textContent = "Comments (0)";
+        });
+    }
+    commentSubmit.addEventListener("click", () => {
+      const text = (commentInput.value || "").trim();
+      if (!text) return;
+      const author = myName();
+      if (!author) return;
+      apiFetch("/api/posts/" + post.id + "/comments", {
+        method: "POST",
+        body: JSON.stringify({ authorName: author, text })
+      })
+        .then((r) => parseJsonResponse(r).then(() => { commentInput.value = ""; refreshComments(); }))
+        .catch(() => {});
+    });
+    commentsToggle.addEventListener("click", () => {
+      const open = !commentsListDiv.classList.contains("hidden");
+      if (open) {
+        commentsListDiv.classList.add("hidden");
+      } else {
+        commentsListDiv.classList.remove("hidden");
+        refreshComments();
+      }
+    });
+    commentsSection.appendChild(commentsToggle);
+    commentsSection.appendChild(commentsListDiv);
+    card.appendChild(commentsSection);
+
+    listEl.appendChild(card);
+  }
+
+  function escapeHtml(s) {
+    const div = document.createElement("div");
+    div.textContent = s;
+    return div.innerHTML;
+  }
+
+  function addInterest(postId) {
+    return apiFetch("/api/posts/" + postId + "/interested", {
+      method: "POST",
+      body: JSON.stringify({ playerName: myName() })
+    }).then((r) => parseJsonResponse(r));
+  }
+
+  function removeInterest(postId, playerNameToRemove, requesterName) {
+    return fetch((baseUrl().replace(/\/$/, "") + "/api/posts/" + postId + "/interested").trim(), {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ playerNameToRemove, requesterName })
+    }).then((r) => parseJsonResponse(r));
+  }
+
+  function deletePost(postId) {
+    return apiFetch("/api/posts/" + postId, {
+      method: "DELETE",
+      body: JSON.stringify({ authorName: myName() })
+    }).then((r) => {
+      if (r.ok) return null;
+      return parseJsonResponse(r, "Delete failed. Is the LFG server URL correct and the server running?");
+    });
+  }
+
+  if (refreshBtn) refreshBtn.addEventListener("click", () => loadPosts(true));
+  if (filterTag) filterTag.addEventListener("change", () => loadPosts(true));
+  if (filterLanguage) filterLanguage.addEventListener("change", () => loadPosts(true));
+  if (createBtn && titleInput && slotsInput) {
+    createBtn.addEventListener("click", () => {
+      const author = myName();
+      if (!author) {
+        setError("Set your in-game name in Options (gear) first.");
+        return;
+      }
+      const text = (titleInput.value || "").trim();
+      if (!text) {
+        setError("Enter a post title.");
+        return;
+      }
+      const description = descriptionInput ? (descriptionInput.value || "").trim() : "";
+      const tags = tagsListEl ? Array.from(tagsListEl.querySelectorAll(".lfg-tag-checkbox:checked")).map((cb) => cb.value) : [];
+      const language = languageSelect && languageSelect.value ? languageSelect.value.trim() : "English";
+      const slots = Math.max(1, Math.min(20, parseInt(slotsInput.value, 10) || 4));
+      const server = currentServer();
+      setError("");
+      apiFetch("/api/posts", {
+        method: "POST",
+        body: JSON.stringify({ authorName: author, text, description, tags, language, slots, server })
+      })
+        .then((r) => parseJsonResponse(r))
+        .then(() => {
+          titleInput.value = "";
+          if (descriptionInput) descriptionInput.value = "";
+          if (tagsListEl) tagsListEl.querySelectorAll(".lfg-tag-checkbox").forEach((cb) => { cb.checked = false; });
+          if (languageSelect) languageSelect.value = "English";
+          loadPosts(false);
+        })
+        .catch((e) => setError(e.message || "Failed to create post"));
+    });
+  }
+
+  function initPrefs() {
+    if (!window.api.getLfgServerUrl || !window.api.getLfgPlayerName) return;
+    window.api.getLfgServerUrl().then((v) => { window.__lfgBaseUrl = (v || "").trim() || LFG_DEFAULT_SERVER; });
+    window.api.getLfgPlayerName().then((v) => { window.__lfgPlayerName = (v || "").trim(); });
+    window.api.getLfgServer().then((v) => { window.__lfgServer = (v || "").trim() || "1"; });
+  }
+  initPrefs();
+
+  serverTabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
+      const server = (tab.getAttribute("data-server") || "1").trim();
+      window.__lfgServer = server;
+      if (window.api.setLfgServer) window.api.setLfgServer(server);
+      serverTabs.forEach((t) => t.classList.remove("active"));
+      tab.classList.add("active");
+      loadPosts(true);
+    });
+  });
+
+  loadPosts(true);
+}
+
 // run after DOM loads
 window.addEventListener("DOMContentLoaded", () => {
+  setupStartupModal();
   setupLevelingAccordion();
   setupLevelingAreaDropdowns();
   setupLevelingMapLinks();
@@ -723,4 +1436,5 @@ window.addEventListener("DOMContentLoaded", () => {
   setupUpdaterUI();
   setupPgNews();
   setupWikiSearch();
+  setupLfgPage();
 });
