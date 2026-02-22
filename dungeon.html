@@ -356,14 +356,21 @@
   }
 
   function loadDungeon(name){
-    dungeonImage.onload = function(){
-      if (window.api && window.api.setOverlaySize && dungeonImage.naturalWidth && dungeonImage.naturalHeight) {
-        window.api.setOverlaySize(DUNGEON_SIDEBAR_WIDTH + dungeonImage.naturalWidth, dungeonImage.naturalHeight);
-      }
-      loadPlayerIconPosition();
-    };
-    const file = dungeonImageFiles[name] || `${name}.jpg`;
-    dungeonImage.src = `dungeons/${file}`;
+    const candidates = [dungeonImageFiles[name], `${name}.jpg`, `${name}.png`, `${name}.jpeg`].filter(Boolean);
+    let idx = 0;
+    function tryNext(){
+      if (idx >= candidates.length) return;
+      const file = candidates[idx++];
+      dungeonImage.onload = function(){
+        if (window.api && window.api.setOverlaySize && dungeonImage.naturalWidth && dungeonImage.naturalHeight) {
+          window.api.setOverlaySize(DUNGEON_SIDEBAR_WIDTH + dungeonImage.naturalWidth, dungeonImage.naturalHeight);
+        }
+        loadPlayerIconPosition();
+      };
+      dungeonImage.onerror = tryNext;
+      dungeonImage.src = `dungeons/${file}`;
+    }
+    tryNext();
     scale = 0.8; x = 40; y = 40;
     applyTransform();
   }

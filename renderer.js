@@ -177,16 +177,17 @@ setupZoneSelects();
 // ——— Boss Timer ———
 const BOSS_TIMER_STORAGE_KEY = "pieguy-boss-timers";
 const BOSS_TIMER_LIST = [
-  { id: "serbule-crypt", name: "Serbule Crypt", defaultRespawnMinutes: 5 },
-  { id: "goblin-dungeon", name: "Goblin Dungeon", defaultRespawnMinutes: 5 },
-  { id: "kur-tower", name: "Kur Tower", defaultRespawnMinutes: 5 },
-  { id: "wolf-cave", name: "Wolf Cave", defaultRespawnMinutes: 5 },
-  { id: "myconian-cave", name: "Myconian Cave", defaultRespawnMinutes: 5 },
-  { id: "world-eltibule", name: "World Boss (Eltibule)", defaultRespawnMinutes: 5 },
-  { id: "world-gazluk", name: "World Boss (Gazluk)", defaultRespawnMinutes: 5 },
-  { id: "other", name: "Other / Custom", defaultRespawnMinutes: 5 }
+  { id: "serbule-crypt", name: "Serbule Crypt", defaultRespawnMinutes: 8 },
+  { id: "goblin-dungeon", name: "Goblin Dungeon", defaultRespawnMinutes: 8 },
+  { id: "kur-tower", name: "Kur Tower", defaultRespawnMinutes: 8 },
+  { id: "wolf-cave", name: "Wolf Cave", defaultRespawnMinutes: 8 },
+  { id: "myconian-cave", name: "Myconian Cave", defaultRespawnMinutes: 8 },
+  { id: "world-eltibule", name: "World Boss (Eltibule)", defaultRespawnMinutes: 8 },
+  { id: "world-gazluk", name: "World Boss (Gazluk)", defaultRespawnMinutes: 8 },
+  { id: "other", name: "Other / Custom", defaultRespawnMinutes: 8 }
 ];
-const RESPAWN_OPTIONS = [5, 30, 60, 90, 120, 180, 240, 360];
+// Boss section: 5, 8, 14 minutes only; default 8
+const RESPAWN_OPTIONS = [5, 8, 14];
 
 function setupBossTimer() {
   const container = document.getElementById("bossTimerList");
@@ -222,14 +223,14 @@ function setupBossTimer() {
     const row = document.createElement("div");
     row.className = "boss-timer-row";
     row.dataset.bossId = boss.id;
-    const respawnMin = RESPAWN_OPTIONS.includes(boss.defaultRespawnMinutes) ? boss.defaultRespawnMinutes : 5;
+    const respawnMin = RESPAWN_OPTIONS.includes(boss.defaultRespawnMinutes) ? boss.defaultRespawnMinutes : 8;
     const select = document.createElement("select");
     select.className = "boss-timer-respawn";
     select.title = "Respawn time (minutes)";
     RESPAWN_OPTIONS.forEach((min) => {
       const opt = document.createElement("option");
       opt.value = min;
-      opt.textContent = min === 5 ? "5 min" : min === 60 ? "1 hour" : min === 120 ? "2 hours" : min === 180 ? "3 hours" : min === 240 ? "4 hours" : min === 360 ? "6 hours" : `${min} min`;
+      opt.textContent = `${min} min`;
       select.appendChild(opt);
     });
     select.value = String(respawnMin);
@@ -376,6 +377,24 @@ function setupLevelingAreaDropdowns() {
 
     showArea(select.value);
     select.addEventListener("change", () => showArea(select.value));
+  });
+}
+
+// Leveling guide: "View map" / "View dungeon map" open overlay and switch to that zone
+function setupLevelingMapLinks() {
+  if (!window.api) return;
+  document.querySelectorAll("#page-leveling .leveling-view-map-btn").forEach((btn) => {
+    const mapZone = btn.getAttribute("data-map-zone");
+    const dungeonZone = btn.getAttribute("data-dungeon-zone");
+    btn.addEventListener("click", () => {
+      if (mapZone) {
+        window.api.setCurrentMapZone(mapZone);
+        window.api.openMap();
+      } else if (dungeonZone) {
+        window.api.setCurrentDungeonZone(dungeonZone);
+        window.api.openDungeon();
+      }
+    });
   });
 }
 
@@ -645,6 +664,7 @@ function setupWikiSearch() {
 window.addEventListener("DOMContentLoaded", () => {
   setupLevelingAccordion();
   setupLevelingAreaDropdowns();
+  setupLevelingMapLinks();
   setupUpdaterUI();
   setupPgNews();
   setupWikiSearch();
