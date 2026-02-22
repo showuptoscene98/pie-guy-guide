@@ -693,15 +693,21 @@ function setupUpdaterUI() {
   function hideBanner() {
     if (banner) banner.classList.add("hidden");
   }
-  function showUpdateModal(title, text, showRestartBtn) {
+  let lastUpdateInfo = null;
+
+  function showUpdateModal(title, text, showRestartBtn, restartLabel) {
     if (!modal || !modalTitle || !modalText) return;
     modalTitle.textContent = title;
     modalText.textContent = text;
-    if (modalRestart) modalRestart.style.display = showRestartBtn ? "inline-block" : "none";
+    if (modalRestart) {
+      modalRestart.style.display = showRestartBtn ? "inline-block" : "none";
+      modalRestart.textContent = restartLabel || "Restart to update";
+    }
     modal.classList.remove("hidden");
   }
   function hideUpdateModal() {
     if (modal) modal.classList.add("hidden");
+    lastUpdateInfo = null;
   }
 
   window.api.onUpdaterChecking(() => {
@@ -714,8 +720,14 @@ function setupUpdaterUI() {
   });
   window.api.onUpdaterUpdateAvailable((info) => {
     const ver = (info && info.version) ? info.version : "new version";
-    showBanner("Update available: " + ver + ". Downloading…", false);
-    showUpdateModal("Update available", "Version " + ver + " is available. Downloading in the background…", false);
+    lastUpdateInfo = info || null;
+    if (info && info.releaseUrl) {
+      showBanner("Update available: " + ver + ". Download from Releases.", false);
+      showUpdateModal("Update available", "Version " + ver + " is available. Download the installer from Releases.", true, "Open Releases");
+    } else {
+      showBanner("Update available: " + ver + ". Downloading…", false);
+      showUpdateModal("Update available", "Version " + ver + " is available. Downloading in the background…", false);
+    }
     if (checkBtn) checkBtn.disabled = false;
   });
   window.api.onUpdaterUpdateNotAvailable(() => {
@@ -724,9 +736,10 @@ function setupUpdaterUI() {
     setTimeout(hideBanner, 3000);
   });
   window.api.onUpdaterUpdateDownloaded((info) => {
+    lastUpdateInfo = null;
     const ver = (info && info.version) ? info.version : "";
     showBanner("Update ready. Restart the app to install.", true);
-    showUpdateModal("Update ready", "The new version has been downloaded. Restart the app to install.", true);
+    showUpdateModal("Update ready", (ver ? "Version " + ver + " is ready. " : "") + "Restart the app to install.", true, "Restart to update");
     if (modalText && ver) modalText.textContent = "Version " + ver + " is ready. Restart the app to install.";
     if (checkBtn) checkBtn.disabled = false;
   });
@@ -737,7 +750,14 @@ function setupUpdaterUI() {
   });
 
   if (modalLater) modalLater.addEventListener("click", hideUpdateModal);
-  if (modalRestart) modalRestart.addEventListener("click", () => window.api.quitAndInstall());
+  if (modalRestart) modalRestart.addEventListener("click", () => {
+    if (lastUpdateInfo && lastUpdateInfo.releaseUrl && window.api.openExternal) {
+      window.api.openExternal(lastUpdateInfo.releaseUrl);
+    } else {
+      window.api.quitAndInstall();
+    }
+    hideUpdateModal();
+  });
   if (modal && modal.querySelector(".updateModal-backdrop")) {
     modal.querySelector(".updateModal-backdrop").addEventListener("click", hideUpdateModal);
   }

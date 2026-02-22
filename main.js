@@ -28,6 +28,62 @@ if (!gotLock) {
 }
 
 const PG_NEWS_URL = "https://cdn.projectgorgon.com/news.txt";
+const GITHUB_RELEASES_URL = "https://api.github.com/repos/showuptoscene98/pie-guy-guide/releases/latest";
+
+function parseVersion(s) {
+  const v = String(s || "").replace(/^v/, "").trim();
+  const parts = v.split(".").map((n) => parseInt(n, 10) || 0);
+  return { major: parts[0] || 0, minor: parts[1] || 0, patch: parts[2] || 0 };
+}
+
+function versionGreaterThan(a, b) {
+  const va = parseVersion(a);
+  const vb = parseVersion(b);
+  if (va.major !== vb.major) return va.major > vb.major;
+  if (va.minor !== vb.minor) return va.minor > vb.minor;
+  return va.patch > vb.patch;
+}
+
+function checkGitHubUpdate(sendStatus) {
+  const req = https.get(GITHUB_RELEASES_URL, { headers: { "User-Agent": "Pie-Guy-Guide-Updater" } }, (res) => {
+    if (res.statusCode !== 200) {
+      sendStatus("updater:error", "Could not check for updates.");
+      return;
+    }
+    const chunks = [];
+    res.on("data", (c) => chunks.push(c));
+    res.on("end", () => {
+      try {
+        const data = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+        const tag = (data.tag_name || "").trim();
+        const prerelease = !!data.prerelease;
+        if (!tag || prerelease) {
+          sendStatus("updater:update-not-available");
+          return;
+        }
+        const latestVersion = tag.replace(/^v/, "");
+        const currentVersion = app.getVersion();
+        if (versionGreaterThan(latestVersion, currentVersion)) {
+          const releaseUrl = data.html_url || `https://github.com/showuptoscene98/pie-guy-guide/releases/tag/${tag}`;
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.show();
+            mainWindow.focus();
+          }
+          sendStatus("updater:update-available", { version: latestVersion, releaseUrl });
+        } else {
+          sendStatus("updater:update-not-available");
+        }
+      } catch (_) {
+        sendStatus("updater:error", "Could not parse update info.");
+      }
+    });
+  });
+  req.on("error", () => sendStatus("updater:error", "Could not check for updates."));
+  req.setTimeout(15000, () => {
+    req.destroy();
+    sendStatus("updater:error", "Update check timed out.");
+  });
+}
 
 // Supabase config (optional): supabaseConfig.json in project root or userData
 function loadSupabaseConfig() {
@@ -537,15 +593,17 @@ function setupAutoUpdater() {
   autoUpdater.on("error", (err) => {
     console.error("[updater]", err.message || err);
     let msg = err.message || String(err);
-    if (msg.includes("No published versions") || msg.includes("Could not find updates")) {
-      msg = "No updates found. Ensure a Release is published at GitHub for this app.";
+    if (msg.includes("No published versions") || msg.includes("Could not find updates") || msg.includes("Could not find latest") || msg.includes("404")) {
+      msg = "No updates found. You can download the latest installer from GitHub Releases.";
     }
     sendStatus("updater:error", msg);
   });
 
-  // Auto-check shortly after app ready, then every 4 hours
-  setTimeout(() => autoUpdater.checkForUpdates(), 3000);
-  setInterval(() => autoUpdater.checkForUpdates(), 4 * 60 * 60 * 1000);
+  // On Windows we use GitHub API for Squirrel; skip electron-updater schedule
+  if (process.platform !== "win32") {
+    setTimeout(() => autoUpdater.checkForUpdates(), 3000);
+    setInterval(() => autoUpdater.checkForUpdates(), 4 * 60 * 60 * 1000);
+  }
 }
 
 function sendAuthCallbackUrl(url) {
@@ -921,6 +979,9 @@ ipcMain.handle("auth:getSupabaseConfig", () => supabaseConfig);
 ipcMain.handle("auth:openExternal", (event, url) => {
   if (url && typeof url === "string") shell.openExternal(url);
 });
+ipcMain.handle("openExternal", (event, url) => {
+  if (url && typeof url === "string") shell.openExternal(url);
+});
 ipcMain.handle("preferences:getLfgStartupDismissed", () => lfgStartupDismissed);
 ipcMain.on("preferences:setLfgStartupDismissed", (event, value) => {
   lfgStartupDismissed = !!value;
@@ -940,9 +1001,18 @@ ipcMain.on("overlay:setClickthrough", (event, enabled) => {
   }
 });
 
-// Updater
+// Updater: on Windows (Squirrel) use GitHub API; otherwise use electron-updater
 ipcMain.on("updater:check", () => {
-  if (app.isPackaged && autoUpdater) autoUpdater.checkForUpdates();
+  if (!app.isPackaged) return;
+  if (process.platform === "win32") {
+    const send = (channel, ...args) => {
+      if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(channel, ...args);
+    };
+    send("updater:checking");
+    checkGitHubUpdate(send);
+  } else if (autoUpdater) {
+    autoUpdater.checkForUpdates();
+  }
 });
 ipcMain.on("updater:quitAndInstall", () => {
   if (app.isPackaged) {

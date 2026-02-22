@@ -51,6 +51,7 @@ contextBridge.exposeInMainWorld("api", {
   checkForUpdates: () => ipcRenderer.send("updater:check"),
   quitAndInstall: () => ipcRenderer.send("updater:quitAndInstall"),
   getAppVersion: () => ipcRenderer.invoke("updater:getVersion"),
+  openExternal: (url) => ipcRenderer.invoke("openExternal", url),
   onUpdaterChecking: (cb) => { ipcRenderer.on("updater:checking", () => cb()); },
   onUpdaterUpdateAvailable: (cb) => { ipcRenderer.on("updater:update-available", (e, info) => cb(info)); },
   onUpdaterUpdateNotAvailable: (cb) => { ipcRenderer.on("updater:update-not-available", (e, info) => cb(info)); },
