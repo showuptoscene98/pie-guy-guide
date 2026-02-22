@@ -85,6 +85,71 @@ body[data-theme="normal"] .home-update-item{
   border-color:rgba(255,255,255,0.12);
 }
 
+/* Theme: Ocean – teal/blue sidebar */
+body[data-theme="ocean"] .sidebar{
+  background:rgba(18,35,45,0.92);
+  border-left:3px solid #4dd0e1;
+}
+body[data-theme="ocean"] .side-head,
+body[data-theme="ocean"] .navBtn{
+  background:rgba(25,50,65,0.9);
+}
+body[data-theme="ocean"] .navBtn:hover{
+  background:rgba(35,65,85,0.95);
+}
+
+/* Theme: Forest – green sidebar */
+body[data-theme="forest"] .sidebar{
+  background:rgba(18,40,22,0.92);
+  border-left:3px solid #81c784;
+}
+body[data-theme="forest"] .side-head,
+body[data-theme="forest"] .navBtn{
+  background:rgba(25,55,30,0.9);
+}
+body[data-theme="forest"] .navBtn:hover{
+  background:rgba(35,70,40,0.95);
+}
+
+/* Theme: Purple – violet sidebar */
+body[data-theme="purple"] .sidebar{
+  background:rgba(35,18,45,0.92);
+  border-left:3px solid #b39ddb;
+}
+body[data-theme="purple"] .side-head,
+body[data-theme="purple"] .navBtn{
+  background:rgba(50,25,65,0.9);
+}
+body[data-theme="purple"] .navBtn:hover{
+  background:rgba(65,35,85,0.95);
+}
+
+/* Theme: Sunset – warm orange/amber sidebar */
+body[data-theme="sunset"] .sidebar{
+  background:rgba(45,28,18,0.92);
+  border-left:3px solid #ffb74d;
+}
+body[data-theme="sunset"] .side-head,
+body[data-theme="sunset"] .navBtn{
+  background:rgba(60,38,25,0.9);
+}
+body[data-theme="sunset"] .navBtn:hover{
+  background:rgba(80,50,35,0.95);
+}
+
+/* Theme: Slate – cool gray-blue sidebar */
+body[data-theme="slate"] .sidebar{
+  background:rgba(35,40,48,0.95);
+  border-left:3px solid #90a4ae;
+}
+body[data-theme="slate"] .side-head,
+body[data-theme="slate"] .navBtn{
+  background:rgba(45,52,62,0.9);
+}
+body[data-theme="slate"] .navBtn:hover{
+  background:rgba(58,68,80,0.95);
+}
+
 .app{
   height:100vh;
   display:flex;
@@ -1006,4 +1071,15 @@ kbd{
 
 .lvlBody strong{
   color: var(--text);
+}
+
+.tips-dropdown{
+  margin-top: 16px;
+  max-width: 720px;
+}
+.tips-dropdown .lvlBody p{
+  margin: 8px 0 0;
+}
+.tips-dropdown .lvlBody p:first-of-type{
+  margin-top: 0;
 }

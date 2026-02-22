@@ -128,7 +128,7 @@ function loadPreferences() {
     const raw = fs.readFileSync(PREFERENCES_PATH, "utf8");
     const prefs = JSON.parse(raw);
     if (typeof prefs.overlayAnchorTopRight === "boolean") overlayAnchorTopRight = prefs.overlayAnchorTopRight;
-    if (typeof prefs.theme === "string" && ["dark", "dark-red", "normal"].includes(prefs.theme)) themePreference = prefs.theme;
+    if (typeof prefs.theme === "string" && ["dark", "dark-red", "normal", "ocean", "forest", "purple", "sunset", "slate"].includes(prefs.theme)) themePreference = prefs.theme;
     if (typeof prefs.currentMapZone === "string") currentMapZone = prefs.currentMapZone;
     if (typeof prefs.currentDungeonZone === "string") currentDungeonZone = prefs.currentDungeonZone;
     if (prefs.playerIconPositions && typeof prefs.playerIconPositions === "object") {
@@ -686,7 +686,7 @@ ipcMain.on("overlay:setAnchorPreference", (event, value) => {
 });
 ipcMain.handle("preferences:getTheme", () => themePreference);
 ipcMain.on("preferences:setTheme", (event, value) => {
-  if (typeof value === "string" && ["dark", "dark-red", "normal"].includes(value)) {
+  if (typeof value === "string" && ["dark", "dark-red", "normal", "ocean", "forest", "purple", "sunset", "slate"].includes(value)) {
     themePreference = value;
     savePreferences();
   }
